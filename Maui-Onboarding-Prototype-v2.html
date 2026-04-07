@@ -1,0 +1,2849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Maui — Onboarding</title>
+maui</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --cream:#F5F0E8;--dark:#1C1C1A;--terra:#C4845A;--terra-light:#FDF6F1;
+  --terra-mid:#E8C4A8;--gray:#8A8880;--border:#E8E4DC;--white:#FAFAF7;
+  --green:#7A9E7E;--green-light:#EAF3DE;--blue:#4A7BA7;--blue-light:#EBF3FB;
+  --font-serif:'Playfair Display',serif;--font-sans:'DM Sans',sans-serif;
+}
+html,body{min-height:100%;background:#1C1C1A}
+body{font-family:var(--font-sans);display:flex;align-items:center;justify-content:center;padding:20px;}
+
+/* DEVICE SHELL */
+.device{
+  width:390px;height:844px;background:var(--cream);border-radius:50px;
+  overflow:hidden;position:relative;box-shadow:0 0 0 10px #2a2a28, 0 40px 80px rgba(0,0,0,.6);
+  touch-action:manipulation;
+}
+@media(max-height:900px){.device{width:360px;height:780px;border-radius:44px}}
+@media(max-height:800px){.device{width:320px;height:693px;border-radius:40px}}
+
+/* STATUS BAR */
+.status{
+  height:50px;display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 28px 10px;background:var(--cream);position:absolute;top:0;left:0;right:0;z-index:100;
+  flex-shrink:0;
+}
+.status-time{font-size:15px;font-weight:500;color:var(--dark)}
+.status-icons{display:flex;align-items:center;gap:6px}
+.bat{width:25px;height:12px;border:1.5px solid var(--dark);border-radius:3px;position:relative;display:flex;align-items:center;padding:2px}
+.bat::after{content:'';position:absolute;right:-5px;top:50%;transform:translateY(-50%);width:3px;height:6px;background:var(--dark);border-radius:0 2px 2px 0}
+.bat-fill{height:100%;background:var(--dark);border-radius:1px;width:75%}
+
+/* SCREEN SYSTEM */
+.screens{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden}
+.screen{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+  background:var(--cream);will-change:transform;
+  pointer-events:none;
+}
+.screen.active{transform:translateX(0) !important;pointer-events:all}
+.screen.exit{transform:translateX(-100%) !important}
+.screen.slide-from-left{transform:translateX(-100%) !important}
+
+/* SCREEN CONTENT */
+.screen-body{flex:1;overflow-y:auto;padding:60px 28px 100px;-webkit-overflow-scrolling:touch}
+.screen-body::-webkit-scrollbar{display:none}
+
+/* PROGRESS BAR + BACK BUTTON ROW */
+.progress-wrap{position:absolute;top:50px;left:0;right:0;padding:0 24px;background:var(--cream);z-index:99;display:flex;align-items:center;height:44px;gap:10px;pointer-events:none}
+.progress-track{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--terra);border-radius:2px;transition:width .4s ease}
+
+/* BACK BUTTON — inline inside progress-wrap */
+.back-btn{
+  width:32px;height:32px;border-radius:50%;background:transparent;border:none;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--terra);
+  padding:0;flex-shrink:0;position:static;pointer-events:all;
+}
+.back-btn svg{width:20px;height:20px}
+
+/* TYPOGRAPHY */
+.screen-label{font-size:11px;font-weight:500;color:var(--terra);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.screen-title{font-family:var(--font-serif);font-size:28px;color:var(--dark);line-height:1.2;margin-bottom:8px}
+.screen-sub{font-size:14px;color:var(--gray);line-height:1.6;margin-bottom:28px}
+
+/* BUTTONS */
+.btn-primary{
+  width:100%;background:var(--dark);color:var(--cream);border:none;
+  border-radius:100px;padding:16px;font-size:16px;font-family:var(--font-sans);
+  font-weight:500;cursor:pointer;transition:opacity .15s;
+}
+.btn-primary:active{opacity:.85}
+.btn-primary.terra{background:var(--terra)}
+.btn-secondary{
+  width:100%;background:transparent;color:var(--dark);
+  border:1.5px solid var(--border);border-radius:100px;padding:15px;
+  font-size:16px;font-family:var(--font-sans);font-weight:500;cursor:pointer;margin-top:10px;
+}
+.btn-ghost{
+  width:100%;background:transparent;color:var(--gray);border:none;
+  padding:14px;font-size:14px;font-family:var(--font-sans);cursor:pointer;margin-top:4px;
+}
+
+/* STICKY FOOTER */
+.screen-footer{
+  position:absolute;bottom:0;left:0;right:0;padding:16px 28px 36px;
+  background:linear-gradient(to bottom,transparent,var(--cream) 30%);
+}
+
+/* PATH CARDS */
+.path-card{
+  border:1.5px solid var(--border);border-radius:20px;padding:20px;
+  margin-bottom:12px;cursor:pointer;transition:all .2s;background:var(--white);
+}
+.path-card:active{transform:scale(.98)}
+.path-card.selected{border-color:var(--terra);background:var(--terra-light)}
+.path-card-icon{width:44px;height:44px;border-radius:14px;background:var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:22px}
+.path-card.fitness .path-card-icon{background:var(--blue-light)}
+.path-card.health .path-card-icon{background:var(--green-light)}
+.path-card-title{font-size:16px;font-weight:500;color:var(--dark);margin-bottom:4px}
+.path-card-sub{font-size:13px;color:var(--gray);line-height:1.5}
+.path-card-note{font-size:12px;color:var(--terra);margin-top:8px;font-weight:500}
+
+/* STATS FORM */
+.stat-row{margin-bottom:20px}
+.stat-label{font-size:13px;font-weight:500;color:var(--dark);margin-bottom:8px;display:block}
+.stat-input{
+  width:100%;border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;
+  font-size:16px;font-family:var(--font-sans);background:var(--white);color:var(--dark);
+  outline:none;transition:border-color .2s;
+}
+.stat-input:focus{border-color:var(--terra)}
+.seg-control{display:flex;background:var(--border);border-radius:100px;padding:3px;gap:3px}
+.seg-btn{
+  flex:1;padding:9px;border:none;border-radius:100px;font-size:14px;
+  font-family:var(--font-sans);font-weight:500;cursor:pointer;background:transparent;
+  color:var(--gray);transition:all .2s;
+}
+.seg-btn.active{background:var(--white);color:var(--dark)}
+
+/* GOAL CARDS */
+.goal-card{
+  border:1.5px solid var(--border);border-radius:16px;padding:16px;
+  margin-bottom:10px;cursor:pointer;transition:all .2s;background:var(--white);
+  display:flex;flex-direction:column;
+}
+.goal-card:active{transform:scale(.98)}
+.goal-card.selected{border-color:var(--terra);background:var(--terra-light)}
+.goal-icon{width:40px;height:40px;border-radius:12px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.goal-card.selected .goal-icon{background:rgba(196,132,90,.15)}
+.goal-text-title{font-size:15px;font-weight:500;color:var(--dark)}
+.goal-text-sub{font-size:13px;color:var(--gray);margin-top:2px}
+.goal-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;margin-left:auto;display:flex;align-items:center;justify-content:center}
+.goal-card.selected .goal-check{background:var(--terra);border-color:var(--terra)}
+
+/* GOAL CARD EXPAND */
+.goal-expand-btn{
+  width:100%;background:none;border:none;padding:8px 0 2px;
+  display:flex;align-items:center;gap:5px;cursor:pointer;
+  font-size:12px;font-weight:500;color:var(--terra);font-family:var(--font-sans);
+  transition:opacity .15s;
+}
+.goal-expand-btn:active{opacity:.7}
+.goal-expand-chevron{
+  display:inline-block;transition:transform .25s cubic-bezier(.4,0,.2,1);font-style:normal;font-size:10px;
+}
+.goal-expand-chevron.open{transform:rotate(180deg)}
+.goal-expand-panel{
+  overflow:hidden;max-height:0;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .25s;
+  opacity:0;
+}
+.goal-expand-panel.open{max-height:200px;opacity:1}
+.goal-expand-inner{
+  border-top:1px solid var(--border);margin-top:4px;padding-top:10px;padding-bottom:4px;
+  display:flex;flex-direction:column;gap:7px;
+}
+.goal-expand-bullet{
+  display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--gray);line-height:1.45;
+}
+.goal-expand-dot{
+  width:5px;height:5px;border-radius:50%;background:var(--terra);flex-shrink:0;margin-top:5px;
+}
+
+/* MACRO REVEAL */
+.macro-card{background:var(--white);border:1.5px solid var(--border);border-radius:20px;padding:20px;margin-bottom:20px}
+.macro-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.macro-row:last-child{border-bottom:none}
+.macro-name{font-size:14px;color:var(--gray)}
+.macro-val{font-size:18px;font-weight:500;color:var(--dark);display:flex;align-items:center;gap:6px}
+.macro-unit{font-size:13px;color:var(--gray);font-weight:400}
+.macro-edit{width:32px;height:32px;border-radius:8px;background:var(--terra-light);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--terra)}
+.macro-inline{width:72px;border:none;border-bottom:2px solid var(--terra-mid);border-radius:0;padding:4px 2px;font-size:18px;font-family:var(--font-sans);font-weight:500;color:var(--dark);text-align:right;background:transparent;outline:none;-moz-appearance:textfield;}
+.macro-inline:focus{border-bottom-color:var(--terra);}
+.macro-inline::-webkit-inner-spin-button,.macro-inline::-webkit-outer-spin-button{-webkit-appearance:none;}
+.macro-input{width:70px;border:1.5px solid var(--terra);border-radius:8px;padding:4px 8px;font-size:16px;font-family:var(--font-sans);font-weight:500;text-align:right;outline:none;background:var(--white)}
+
+/* CHAT INTERFACE */
+.chat-wrap{display:flex;flex-direction:column;gap:16px;padding-bottom:8px}
+.chat-bubble{max-width:85%;padding:14px 16px;border-radius:20px;font-size:15px;line-height:1.5}
+.chat-bubble.mise{background:var(--white);border:1px solid var(--border);border-radius:20px 20px 20px 4px;color:var(--dark);align-self:flex-start}
+.chat-bubble.user{background:var(--dark);color:var(--cream);border-radius:20px 20px 4px 20px;align-self:flex-end}
+.chat-avatar{width:28px;height:28px;border-radius:50%;background:var(--terra);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--cream);flex-shrink:0}
+.chat-row{display:flex;align-items:flex-end;gap:8px}
+.chat-row.user-row{flex-direction:row-reverse}
+.chat-input-wrap{display:flex;gap:8px;align-items:flex-end;margin-top:12px}
+.chat-input{
+  flex:1;border:1.5px solid var(--border);border-radius:20px;padding:12px 16px;
+  font-size:15px;font-family:var(--font-sans);background:var(--white);color:var(--dark);
+  outline:none;resize:none;min-height:46px;max-height:120px;
+}
+.chat-input:focus{border-color:var(--terra)}
+.chat-send{width:46px;height:46px;border-radius:50%;background:var(--terra);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-send svg{width:18px;height:18px;color:var(--cream)}
+.typing-dots{display:flex;gap:4px;padding:4px 0}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--gray);animation:dot .9s infinite}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+/* CUISINE PILLS */
+.pills-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.pill{
+  border:1.5px solid var(--border);border-radius:100px;padding:10px 16px;
+  font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;background:var(--white);color:var(--dark);
+}
+.pill.selected{border-color:var(--terra);background:var(--terra-light);color:var(--terra)}
+
+/* SPICE SELECTOR */
+.spice-wrap{display:flex;gap:8px;margin-bottom:24px}
+.spice-btn{
+  flex:1;border:1.5px solid var(--border);border-radius:14px;padding:16px 8px;
+  text-align:center;cursor:pointer;transition:all .2s;background:var(--white);
+}
+.spice-btn.selected{border-color:var(--terra);background:var(--terra-light)}
+.spice-emoji{font-size:24px;display:block;margin-bottom:6px}
+.spice-label{font-size:12px;font-weight:500;color:var(--dark)}
+.spice-btn.selected .spice-label{color:var(--terra)}
+
+/* ALLERGY PILLS */
+.allergy-grid{display:flex;flex-wrap:wrap;gap:8px}
+.allergy-pill{
+  border:1.5px solid var(--border);border-radius:100px;padding:10px 14px;
+  font-size:14px;cursor:pointer;transition:all .2s;background:var(--white);
+}
+.allergy-pill.selected{border-color:#C4714A;background:#FCEBEB;color:#C4714A}
+
+/* TINDER SWIPE */
+.swipe-stack{position:relative;height:380px;margin-bottom:20px}
+.swipe-card{
+  position:absolute;top:0;left:0;width:100%;border-radius:24px;overflow:hidden;
+  background:var(--white);border:1px solid var(--border);
+  transform-origin:bottom center;transition:transform .15s;cursor:grab;
+  box-shadow:0 4px 20px rgba(0,0,0,.08);
+}
+.swipe-card:active{cursor:grabbing}
+.swipe-card-img{width:100%;height:260px;background:linear-gradient(135deg,#f0a070,#c06030);display:flex;align-items:center;justify-content:center;font-size:80px}
+.swipe-card-info{padding:16px}
+.swipe-card-title{font-size:18px;font-weight:500;color:var(--dark);margin-bottom:4px}
+.swipe-card-tags{display:flex;gap:6px;flex-wrap:wrap}
+.swipe-card-tag{font-size:12px;color:var(--gray);background:var(--cream);border-radius:100px;padding:4px 10px}
+.swipe-actions{display:flex;gap:16px;justify-content:center}
+.swipe-btn{
+  width:64px;height:64px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;
+  transition:all .2s;
+}
+.swipe-btn.like{border-color:var(--green);background:var(--green-light)}
+.swipe-btn.nope{border-color:#C4714A;background:#FCEBEB}
+.swipe-indicator{position:absolute;top:20px;padding:8px 16px;border-radius:8px;font-size:20px;font-weight:700;opacity:0;transition:opacity .15s;z-index:10}
+.swipe-indicator.like{left:16px;background:var(--green-light);color:var(--green);border:2px solid var(--green)}
+.swipe-indicator.nope{right:16px;background:#FCEBEB;color:#C4714A;border:2px solid #C4714A}
+
+/* COOKING PATTERN */
+.pattern-card{
+  border:1.5px solid var(--border);border-radius:16px;padding:16px;
+  margin-bottom:10px;cursor:pointer;transition:all .2s;background:var(--white);
+  display:flex;align-items:center;gap:14px;
+}
+.pattern-card.selected{border-color:var(--terra);background:var(--terra-light)}
+.pattern-icon{font-size:28px;width:48px;text-align:center;flex-shrink:0}
+
+/* CALENDAR */
+.calendar-wrap{margin-bottom:20px}
+.cal-header{display:flex;justify-content:space-between;margin-bottom:12px}
+.cal-month{font-size:15px;font-weight:500;color:var(--dark)}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-day-label{font-size:11px;color:var(--gray);text-align:center;font-weight:500;padding-bottom:6px}
+.cal-day{
+  aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:14px;cursor:pointer;transition:all .2s;color:var(--dark);border:1.5px solid transparent;
+}
+.cal-day.selected{background:var(--terra);color:var(--cream);border-color:var(--terra)}
+.cal-day.today{border-color:var(--terra)}
+.cal-day.other-month{color:var(--border)}
+
+/* MEAL SCOPE */
+.scope-card{
+  border:1.5px solid var(--border);border-radius:16px;padding:18px;
+  margin-bottom:10px;cursor:pointer;transition:all .2s;background:var(--white);
+  display:flex;align-items:center;gap:14px;
+}
+.scope-card.selected{border-color:var(--terra);background:var(--terra-light)}
+.scope-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;margin-left:auto}
+.scope-card.selected .scope-check{background:var(--terra);border-color:var(--terra);display:flex;align-items:center;justify-content:center}
+
+/* MEAL SELECTION */
+.session-block{margin-bottom:28px}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.session-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.session-title{font-size:16px;font-weight:500;color:var(--dark)}
+.session-sub{font-size:12px;color:var(--gray);margin-top:2px}
+.session-count{font-size:12px;color:var(--terra);background:var(--terra-light);border-radius:100px;padding:4px 10px}
+.recipe-card{
+  border:1.5px solid var(--border);border-radius:16px;padding:14px;
+  margin-bottom:8px;cursor:pointer;transition:all .2s;background:var(--white);
+  display:flex;gap:12px;align-items:center;
+}
+.recipe-card.selected{border-color:var(--terra);background:var(--terra-light)}
+.recipe-img{width:56px;height:56px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px}
+.recipe-info{flex:1;min-width:0}
+.recipe-name{font-size:15px;font-weight:500;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recipe-meta{font-size:12px;color:var(--gray);margin-top:3px}
+.recipe-check{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.recipe-card.selected .recipe-check{background:var(--terra);border-color:var(--terra)}
+
+/* SUMMARY */
+.summary-session{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
+.summary-session-title{font-size:14px;font-weight:500;color:var(--terra);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.summary-recipe-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)}
+.summary-recipe-row:last-child{border-bottom:none}
+.summary-recipe-emoji{font-size:20px;width:28px;text-align:center}
+.summary-recipe-name{font-size:14px;color:var(--dark)}
+.macro-summary-bar{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:20px}
+.macro-summary-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+.macro-summary-row:last-child{border-bottom:none}
+.macro-summary-name{font-size:13px;color:var(--gray)}
+.macro-summary-val{font-size:15px;font-weight:500;color:var(--dark)}
+
+/* ACCOUNT */
+.auth-btn{
+  width:100%;border:1.5px solid var(--border);border-radius:14px;padding:15px;
+  font-size:15px;font-family:var(--font-sans);font-weight:500;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;background:var(--white);
+  color:var(--dark);margin-bottom:10px;transition:all .2s;
+}
+.auth-btn:active{background:var(--border)}
+
+/* LOADING */
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:40px}
+.loading-icon{width:80px;height:80px;border-radius:24px;background:var(--terra-light);display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:28px}
+.loading-spinner{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--terra);border-radius:50%;animation:spin 1s linear infinite;margin:24px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-steps{text-align:left;margin-top:28px;width:100%}
+.loading-step{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;color:var(--gray)}
+.loading-step.done{color:var(--green)}
+.loading-step-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0}
+.loading-step.done .loading-step-dot{background:var(--green)}
+.loading-step.active .loading-step-dot{background:var(--terra);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* DASHBOARD */
+.dash-nav{display:flex;justify-content:space-around;padding:12px 0 28px;border-top:1px solid var(--border);background:var(--white);position:absolute;bottom:0;left:0;right:0}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;opacity:.4;transition:opacity .2s}
+.nav-item.active{opacity:1}
+.nav-label{font-size:10px;font-weight:500;color:var(--dark)}
+.week-toggle{display:flex;background:var(--border);border-radius:100px;padding:3px;margin-bottom:20px}
+.week-tab{flex:1;text-align:center;padding:8px;border-radius:100px;font-size:13px;font-weight:500;cursor:pointer;color:var(--gray);transition:all .2s}
+.week-tab.active{background:var(--white);color:var(--dark)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:20px}
+.cal-day-mini{display:flex;flex-direction:column;align-items:center;gap:4px}
+.cal-day-mini-label{font-size:11px;color:var(--gray)}
+.cal-day-mini-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:var(--dark)}
+.cal-day-mini-num.today{background:var(--terra);color:var(--cream)}
+.cal-day-mini-dot{width:5px;height:5px;border-radius:50%;background:var(--terra)}
+.plan-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:10px}
+.plan-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.plan-card-day{font-size:13px;font-weight:500;color:var(--terra);text-transform:uppercase;letter-spacing:.5px}
+.plan-card-session{font-size:11px;color:var(--gray);background:var(--cream);border-radius:100px;padding:3px 8px}
+.plan-meal-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.plan-meal-row:last-child{border-bottom:none}
+.plan-meal-emoji{font-size:22px;width:32px;text-align:center}
+.plan-meal-info{flex:1}
+.plan-meal-name{font-size:14px;font-weight:500;color:var(--dark)}
+.plan-meal-macro{font-size:12px;color:var(--gray);margin-top:1px}
+.plan-meal-type{font-size:11px;color:var(--gray);background:var(--cream);border-radius:100px;padding:2px 8px;flex-shrink:0}
+
+/* WORDMARK */
+.maui-wordmark{font-family:var(--font-serif);font-size:22px;color:var(--dark);letter-spacing:-0.5px}
+
+/* VARIETY NUDGE */
+.nudge{background:var(--terra-light);border:1px solid var(--terra-mid);border-radius:12px;padding:12px 14px;margin-top:8px;display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--terra);line-height:1.4}
+
+/* HOME INDICATOR */
+.home-indicator{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:130px;height:4px;background:var(--dark);border-radius:2px;opacity:.2}
+</style>
+</head>
+<body>
+<div class="device">
+
+  <!-- STATUS BAR -->
+  <div class="status">
+    <div class="status-time">9:41</div>
+    <div class="status-icons">
+      <div class="bat"><div class="bat-fill"></div></div>
+    </div>
+  </div>
+
+  <div class="screens" id="screens">
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 1: OPENING + BRANCH
+    ═══════════════════════════════════════════ -->
+    <div class="screen active" id="s1">
+      <div class="progress-wrap" style="padding-left:24px"><div class="progress-track"><div class="progress-fill" style="width:7%"></div></div></div>
+      <div class="screen-body" style="padding-top:90px">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:64px;margin-bottom:16px">🐱</div>
+          <div class="maui-wordmark" style="font-size:32px;margin-bottom:10px">Hi, I'm Maui.</div>
+          <p style="font-size:16px;color:var(--dark);font-weight:500;line-height:1.4;margin-bottom:8px">I'll build your week around food you actually love.</p>
+          <p style="font-size:14px;color:var(--gray);line-height:1.6">Tell me what you enjoy eating and I'll handle everything else — meals, nutrition, groceries.</p>
+        </div>
+        <div style="background:var(--terra-light);border-radius:16px;padding:16px;margin-top:8px">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="font-size:20px">✨</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--dark);margin-bottom:4px">How Maui works</div>
+              <div style="font-size:12px;color:var(--gray);line-height:1.6">You tell me your goal and what tastes good. I build a plan calibrated to you — and handle the nutrition so you don't have to.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-footer">
+        <button class="btn-primary" onclick="state.path='fitness';goNext()">Let's go</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 2A: STATS FORM (FITNESS ONLY)
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s2a">
+      <div class="progress-wrap"><button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><div class="progress-track"><div class="progress-fill" style="width:14%"></div></div></div>
+      <div class="screen-body" style="padding-top:90px">
+        <div class="screen-title">A few quick things</div>
+        <div class="screen-sub">So Maui can build a plan that's actually calibrated to you.</div>
+
+        <div class="stat-row">
+          <label class="stat-label">Height</label>
+          <div style="display:flex;gap:8px">
+            <input class="stat-input" type="number" placeholder="5" min="3" max="8" style="width:80px" id="stat-ft" oninput="this.value=Math.max(3,Math.abs(parseInt(this.value)||3))"> <span style="align-self:center;color:var(--gray)">ft</span>
+            <input class="stat-input" type="number" placeholder="4" min="0" max="11" style="width:80px" id="stat-in" oninput="if(this.value<0)this.value=0;if(this.value>11)this.value=11"> <span style="align-self:center;color:var(--gray)">in</span>
+          </div>
+        </div>
+        <div class="stat-row">
+          <label class="stat-label">Weight (lbs)</label>
+          <input class="stat-input" type="number" placeholder="135" min="60" max="500" id="stat-weight" oninput="if(this.value<0)this.value=Math.abs(this.value)">
+        </div>
+        <div class="stat-row">
+          <label class="stat-label">Age</label>
+          <input class="stat-input" type="number" placeholder="28" min="16" max="100" id="stat-age" oninput="if(this.value<0)this.value=Math.abs(this.value)">
+        </div>
+        <div class="stat-row">
+          <label class="stat-label">Biological sex</label>
+          <div class="seg-control">
+            <button class="seg-btn active" onclick="setSex('female',this)" id="sex-f">Female</button>
+            <button class="seg-btn" onclick="setSex('male',this)" id="sex-m">Male</button>
+          </div>
+        </div>
+        <div class="stat-row">
+          <label class="stat-label">Activity level</label>
+          <select class="stat-input" id="stat-activity" style="appearance:none">
+            <option value="">Select...</option>
+            <option value="sedentary">Sedentary (desk job, little exercise)</option>
+            <option value="light">Light (1–3 days/week)</option>
+            <option value="moderate">Moderate (3–5 days/week)</option>
+            <option value="active">Active (6–7 days/week)</option>
+            <option value="very-active">Very active (physical job + training)</option>
+          </select>
+        </div>
+      </div>
+      <div class="screen-footer">
+        <button class="btn-primary" onclick="calcMacros()">Continue</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 3A: FITNESS GOAL
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s3a">
+      <div class="progress-wrap"><button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><div class="progress-track"><div class="progress-fill" style="width:21%"></div></div></div>
+      <div class="screen-body" style="padding-top:90px">
+        <div class="screen-title">What's your main goal right now?</div>
+        <div class="screen-sub">Maui will build your plan around this — no tracking needed.</div>
+
+        <!-- BODY COMP -->
+        <div class="goal-card" id="gc-lose-fat" onclick="selectGoal('lose-fat',this)">
+          <div style="display:flex;align-items:center;gap:14px;width:100%">
+            <div class="goal-icon">🔥</div>
+            <div style="flex:1">
+              <div class="goal-text-title">Improve my body composition</div>
+              <div class="goal-text-sub">Build muscle and lose fat over time</div>
+            </div>
+            <div class="goal-check"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="display:none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <button class="goal-expand-btn" onclick="toggleGoalExpand(event,'ge-lose-fat')">
+            <i class="goal-expand-chevron" id="gec-lose-fat">▾</i> How Maui uses this
+          </button>
+          <div class="goal-expand-panel" id="ge-lose-fat">
+            <div class="goal-expand-inner">
+              <div class="goal-expand-bullet"><div class="goal-expand-dot"></div><span>Recipes with higher protein — enough to support muscle without feeling like diet food</span></div>
+              <div class="goal-expand-bullet"><div class="goal-expand-dot"></div><span>Satisfying portions calibrated to a gentle deficit based on your stats</span></div>
+              <div class="goal-expand-bullet"><div class="goal-expand-dot"></div><span>Prioritises meals that keep well, so you're never stuck choosing takeout</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ENERGISED -->
+        <div class="goal-card" id="gc-body-recomp" onclick="selectGoal('body-recomp',this)">
+          <div style="display:flex;align-items:center;gap:14px;width:100%">
+            <div class="goal-icon">⚡</div>
+            <div style="flex:1">
+              <div class="goal-text-title">Feel more energised and consistent</div>
+              <div class="goal-text-sub">Eat well, feel better, have more energy</div>
+            </div>
+            <div class="goal-check"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="display:none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <button class="goal-expand-btn" onclick="toggleGoalExpand(event,'ge-body-recomp')">
+            <i class="goal-expand-chevron" id="gec-body-recomp">▾</i> How Maui uses this
+          </button>
+          <div class="goal-expand-panel" id="ge-body-recomp">
+            <div class="goal-expand-inner">
+              <div class="goal-expand-bullet"><div class="goal-expand-dot"></div><span>Balanced meals that won't spike and crash you mid-afternoon — think grain bowls, not sad salads</span></div>
+              <div class="goal-expand-bullet"><div class="goal-expand-dot"></div><span>Avoids heavy cream sauces and fried mains that leave you sluggish</span></div>
+              <div class="goal-expand-bullet"><div class="goal-expand-dot"></div><span>Variety is the priority — rotating cuisines and proteins so you never dread your next meal</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BUILD MUSCLE -->
+        <div class="goal-card" id="gc-build-muscle" onclick="selectGoal('build-muscle',this)">
+          <div style="display:flex;align-items:center;gap:14px;width:100%">
+            <div class="goal-icon">💪</div>
+            <div style="flex:1">
+              <div class="goal-text-title">Build muscle</div>
+              <div class="goal-text-sub">Prioritise protein and strength</div>
+            </div>
+            <div class="goal-check"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="display:none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <button class="goal-expand-btn" onclick="toggleGoalExpand(event,'ge-build-muscle')">
+            <i class="goal-expand-chevron" id="gec-build-muscle">▾</i> How Maui uses this
+          </button>
+          <div class="goal-expand-panel" id="ge-build-muscle">
+            <div class="goal-expand-inner">
+              <div class="goal-expand-bullet"><div class="goal-expand-dot"></div><span>High-protein recipes across every meal — hitting the numbers your body needs to actually build</span></div>
+              <div class="goal-expand-bullet"><div class="goal-expand-dot"></div><span>Generous portions with enough fuel to train — not undereating dressed up as healthy</span></div>
+              <div class="goal-expand-bullet"><div class="goal-expand-dot"></div><span>Filling, protein-dense meals that still taste like something you'd order at a restaurant</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- JUST EAT BETTER -->
+        <div class="goal-card" id="gc-eat-better" onclick="selectGoal('eat-better',this)">
+          <div style="display:flex;align-items:center;gap:14px;width:100%">
+            <div class="goal-icon">✨</div>
+            <div style="flex:1">
+              <div class="goal-text-title">Just eat better</div>
+              <div class="goal-text-sub">Healthier food, less planning stress</div>
+            </div>
+            <div class="goal-check"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="display:none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <button class="goal-expand-btn" onclick="toggleGoalExpand(event,'ge-eat-better')">
+            <i class="goal-expand-chevron" id="gec-eat-better">▾</i> How Maui uses this
+          </button>
+          <div class="goal-expand-panel" id="ge-eat-better">
+            <div class="goal-expand-inner">
+              <div class="goal-expand-bullet"><div class="goal-expand-dot"></div><span>Real ingredients, nothing processed — meals that feel clean without tasting like it</span></div>
+              <div class="goal-expand-bullet"><div class="goal-expand-dot"></div><span>No calorie targets, no macro tracking — just food you'd actually be excited to cook</span></div>
+              <div class="goal-expand-bullet"><div class="goal-expand-dot"></div><span>Variety built in every week so you never fall back on the same five things</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="screen-footer">
+        <button class="btn-primary" onclick="goNext()">Continue</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 3.5: MAUI TRUST MOMENT
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s35a">
+      <div class="progress-wrap"><button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><div class="progress-track"><div class="progress-fill" style="width:28%"></div></div></div>
+      <div class="screen-body" style="padding-top:90px">
+        <div class="screen-label">All set</div>
+        <div class="screen-title">Maui's already working behind the scenes</div>
+
+        <!-- Trust card -->
+        <div style="background:var(--terra-light);border:1.5px solid var(--terra-mid);border-radius:20px;padding:20px;margin-bottom:20px;text-align:center">
+          <div style="font-size:40px;margin-bottom:12px">🐱</div>
+          <p style="font-size:15px;font-weight:500;color:var(--dark);line-height:1.5;margin-bottom:6px" id="trust-headline">Based on your stats and goal, I've set up your plan to support your body composition goal — higher protein, satisfying portions.</p>
+          <p style="font-size:13px;color:var(--gray);line-height:1.6">Every recipe I suggest will be chosen to help you get there. You just cook and eat — Maui handles the nutrition.</p>
+        </div>
+
+        <!-- Optional targets reveal -->
+        <div style="text-align:center;margin-bottom:16px">
+          <button onclick="toggleTargets()" id="targets-toggle-btn" style="background:none;border:none;font-size:13px;color:var(--terra);text-decoration:underline;cursor:pointer;font-family:inherit">See your targets ↓</button>
+        </div>
+
+        <div id="targets-panel" style="display:none;background:var(--white);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:12px;text-align:center">Edit anything — calories update automatically</div>
+          <div class="macro-card" style="margin:0">
+            <div class="macro-row">
+              <span class="macro-name">Calories</span>
+              <div class="macro-val"><input class="macro-inline" id="m-cal" type="number" min="0" value="1820" oninput="saveMacro('cal',this.value)" style="border-bottom-color:var(--border)"><span class="macro-unit">kcal</span><span style="font-size:10px;color:var(--gray);margin-left:4px">auto</span></div>
+            </div>
+            <div class="macro-row">
+              <span class="macro-name">Protein</span>
+              <div class="macro-val"><input class="macro-inline" id="m-pro" type="number" min="0" value="145" oninput="saveMacro('pro',this.value)"><span class="macro-unit">g</span></div>
+            </div>
+            <div class="macro-row">
+              <span class="macro-name">Carbs</span>
+              <div class="macro-val"><input class="macro-inline" id="m-carb" type="number" min="0" value="182" oninput="saveMacro('carb',this.value)"><span class="macro-unit">g</span></div>
+            </div>
+            <div class="macro-row">
+              <span class="macro-name">Fat</span>
+              <div class="macro-val"><input class="macro-inline" id="m-fat" type="number" min="0" value="56" oninput="saveMacro('fat',this.value)"><span class="macro-unit">g</span></div>
+            </div>
+          </div>
+          <div id="macro-cal-note" style="display:none;font-size:12px;color:var(--terra);background:var(--terra-light);border-radius:10px;padding:10px 12px;margin-top:10px;line-height:1.5"></div>
+          <p style="font-size:11px;color:var(--gray);line-height:1.5;text-align:center;margin-top:10px">Update these any time in Settings → Targets</p>
+        </div>
+
+      </div>
+      <div class="screen-footer">
+        <button class="btn-primary" onclick="goNext()">Sounds good — let's find your flavour</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 4: TASTE PREFERENCES (CHAT)
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s4">
+      <div class="progress-wrap"><button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><div class="progress-track"><div class="progress-fill" id="p4" style="width:35%"></div></div></div>
+      <div class="screen-body" style="padding-top:90px" id="chat-body">
+        <div class="chat-wrap" id="chat-messages">
+          <div class="chat-row">
+            <div class="chat-avatar">🐱</div>
+            <div class="chat-bubble mise">Tell me what you love to eat. 🐱</div>
+          </div>
+        </div>
+        <div style="height:16px"></div>
+        <div id="taste-input-wrap" class="chat-input-wrap">
+          <textarea class="chat-input" id="taste-input" placeholder="e.g. spicy Korean, Thai, Italian..." rows="1" oninput="autoResize(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitTaste();}"></textarea>
+          <button class="chat-send" onclick="submitTaste()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2L15 22 11 13 2 9l20-7z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="taste-footer" class="screen-footer" style="display:none">
+        <button class="btn-primary" onclick="goNext()">Continue</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 5: CUISINE PILLS
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s5">
+      <div class="progress-wrap"><button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><div class="progress-track"><div class="progress-fill" style="width:42%"></div></div></div>
+      <div class="screen-body" style="padding-top:90px">
+        <div class="screen-label">Cuisines</div>
+        <div class="screen-title">Confirm your picks</div>
+        <div class="screen-sub">I pre-selected based on what you told me. Adjust as needed.</div>
+        <div class="pills-wrap" id="cuisine-pills">
+          <!-- populated by JS -->
+        </div>
+      </div>
+      <div class="screen-footer">
+        <button class="btn-primary" onclick="goNext()">Continue</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 6: SPICE + ALLERGIES
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s6">
+      <div class="progress-wrap"><button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><div class="progress-track"><div class="progress-fill" style="width:49%"></div></div></div>
+      <div class="screen-body" style="padding-top:90px">
+        <div class="screen-label">Preferences</div>
+        <div class="screen-title">Spice & safety</div>
+
+        <p style="font-size:14px;font-weight:500;color:var(--dark);margin-bottom:12px">How spicy?</p>
+        <div class="spice-wrap" id="spice-wrap">
+          <div class="spice-btn" onclick="selectSpice('mild',this)"><span class="spice-emoji">😌</span><span class="spice-label">Mild</span></div>
+          <div class="spice-btn" onclick="selectSpice('medium',this)"><span class="spice-emoji">🌶️</span><span class="spice-label">Medium</span></div>
+          <div class="spice-btn selected" onclick="selectSpice('hot',this)"><span class="spice-emoji">🔥</span><span class="spice-label">Bring the heat</span></div>
+        </div>
+
+        <p style="font-size:14px;font-weight:500;color:var(--dark);margin-bottom:12px">Any allergies?</p>
+        <div class="allergy-grid" id="allergy-grid">
+          <div class="allergy-pill" onclick="toggleAllergy(this,'nuts')">🥜 Nuts</div>
+          <div class="allergy-pill" onclick="toggleAllergy(this,'gluten')">🌾 Gluten</div>
+          <div class="allergy-pill" onclick="toggleAllergy(this,'dairy')">🥛 Dairy</div>
+          <div class="allergy-pill" onclick="toggleAllergy(this,'shellfish')">🦐 Shellfish</div>
+          <div class="allergy-pill" onclick="toggleAllergy(this,'soy')">🫘 Soy</div>
+          <div class="allergy-pill" onclick="toggleAllergy(this,'eggs')">🥚 Eggs</div>
+          <div class="allergy-pill" onclick="toggleAllergy(this,'none')">None</div>
+        </div>
+        <div style="margin-top:12px">
+          <input type="text" id="allergy-other" placeholder="Other allergy or intolerance..." 
+            style="width:100%;border:1.5px solid var(--border);border-radius:14px;padding:12px 16px;font-size:15px;font-family:var(--font-sans);background:var(--white);color:var(--dark);outline:none;"
+            onfocus="this.style.borderColor='var(--terra)'" 
+            onblur="this.style.borderColor='var(--border)';saveOtherAllergy(this.value)"
+            onchange="saveOtherAllergy(this.value)">
+        </div>
+      </div>
+      <div class="screen-footer">
+        <button class="btn-primary" onclick="goNext()">Continue</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 7: TINDER SWIPE
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s7">
+      <div class="progress-wrap"><button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><div class="progress-track"><div class="progress-fill" style="width:56%"></div></div></div>
+      <div class="screen-body" style="padding-top:90px">
+        <div class="screen-label">Optional · 60 seconds</div>
+        <div class="screen-title">Swipe your taste</div>
+        <div class="screen-sub">Help me nail your first plan. Right = love it, left = not for me.</div>
+        <div class="swipe-stack" id="swipe-stack"></div>
+        <div class="swipe-actions">
+          <button class="swipe-btn nope" onclick="swipeCard('left')">👎</button>
+          <button class="swipe-btn like" onclick="swipeCard('right')">👍</button>
+        </div>
+        <div style="text-align:center;margin-top:12px">
+          <span id="swipe-count" style="font-size:13px;color:var(--gray)">0 of 10 swiped</span>
+        </div>
+      </div>
+      <div class="screen-footer">
+        <button class="btn-primary" onclick="goNext()">I'm done swiping</button>
+        <button class="btn-ghost" onclick="goNext()" style="color:var(--terra);font-size:14px;text-decoration:underline;text-underline-offset:3px">Skip this step</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 8B: MEAL SCOPE (HEALTH ONLY)
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s8b">
+      <div class="progress-wrap"><button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><div class="progress-track"><div class="progress-fill" style="width:62%"></div></div></div>
+      <div class="screen-body" style="padding-top:90px">
+        <div class="screen-label">Meal scope</div>
+        <div class="screen-title">Which meals?</div>
+        <div class="screen-sub">I'll plan these for you every week.</div>
+
+        <div class="scope-card" onclick="selectScope('dinners',this)">
+          <span style="font-size:24px">🌙</span>
+          <div><div style="font-size:15px;font-weight:500;color:var(--dark)">Just dinners</div><div style="font-size:13px;color:var(--gray);margin-top:2px">The most common pain point</div></div>
+          <div class="scope-check"></div>
+        </div>
+        <div class="scope-card" onclick="selectScope('dinners-lunches',this)">
+          <span style="font-size:24px">☀️</span>
+          <div><div style="font-size:15px;font-weight:500;color:var(--dark)">Dinners and lunches</div><div style="font-size:13px;color:var(--gray);margin-top:2px">Full weekday coverage</div></div>
+          <div class="scope-check"></div>
+        </div>
+        <div class="scope-card" onclick="selectScope('all',this)">
+          <span style="font-size:24px">🍽️</span>
+          <div><div style="font-size:15px;font-weight:500;color:var(--dark)">All meals</div><div style="font-size:13px;color:var(--gray);margin-top:2px">Breakfast, lunch, dinner & snacks</div></div>
+          <div class="scope-check"></div>
+        </div>
+      </div>
+      <div class="screen-footer">
+        <button class="btn-primary" onclick="goNext()">Continue</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 9: COOKING PATTERN
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s9">
+      <div class="progress-wrap"><button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><div class="progress-track"><div class="progress-fill" style="width:70%"></div></div></div>
+      <div class="screen-body" style="padding-top:90px">
+        <div class="screen-label">Cooking style</div>
+        <div class="screen-title">How do you want to cook?</div>
+        <div class="screen-sub">This shapes how Maui structures your week.</div>
+
+        <div class="pattern-card" onclick="selectPattern('batch',this)">
+          <div class="pattern-icon">📦</div>
+          <div><div style="font-size:15px;font-weight:500;color:var(--dark)">Plan me a full week in batches</div><div style="font-size:13px;color:var(--gray);margin-top:2px">I'll cook once or twice — Maui groups everything into prep sessions</div></div>
+          <div class="goal-check" style="margin-left:auto"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="display:none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+        <div class="pattern-card" onclick="selectPattern('daily',this)">
+          <div class="pattern-icon">🍳</div>
+          <div><div style="font-size:15px;font-weight:500;color:var(--dark)">Plan individual meals I'll cook fresh</div><div style="font-size:13px;color:var(--gray);margin-top:2px">No bulk prep — Maui plans each meal for the day I eat it</div></div>
+          <div class="goal-check" style="margin-left:auto"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="display:none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+
+      </div>
+      <div class="screen-footer">
+        <button class="btn-primary" onclick="goNext()">Continue</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 9.5: PLANNING HORIZON (BATCH ONLY)
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s95">
+      <div class="progress-wrap"><button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><div class="progress-track"><div class="progress-fill" style="width:74%"></div></div></div>
+      <div class="screen-body" style="padding-top:90px">
+        <div class="screen-label">Planning horizon</div>
+        <div class="screen-title">How much of your week?</div>
+        <div class="screen-sub">How many days do you want Maui to cover? Leave the rest flexible.</div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px">
+          <div class="scope-card" onclick="selectHorizon(4,this)" id="horizon-partial">
+            <span style="font-size:24px">📅</span>
+            <div>
+              <div style="font-size:15px;font-weight:500;color:var(--dark)">3–4 days</div>
+              <div style="font-size:13px;color:var(--gray);margin-top:2px">Plan part of the week, keep the rest flexible</div>
+            </div>
+            <div class="scope-check"></div>
+          </div>
+          <div class="scope-card" onclick="selectHorizon(7,this)" id="horizon-full">
+            <span style="font-size:24px">🗓️</span>
+            <div>
+              <div style="font-size:15px;font-weight:500;color:var(--dark)">The full week</div>
+              <div style="font-size:13px;color:var(--gray);margin-top:2px">Plan all 7 days — Maui handles everything</div>
+            </div>
+            <div class="scope-check"></div>
+          </div>
+        </div>
+        <p style="font-size:13px;color:var(--gray);line-height:1.5;text-align:center">You can fine-tune the exact days on the next screen.</p>
+      </div>
+      <div class="screen-footer">
+        <button class="btn-primary" onclick="goNext()">Continue</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 10: COOK DAYS
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s10">
+      <div class="progress-wrap"><button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><div class="progress-track"><div class="progress-fill" style="width:77%"></div></div></div>
+      <div class="screen-body" style="padding-top:90px">
+        <div class="screen-label">Schedule</div>
+        <div class="screen-title" id="cook-days-title">Which day would you like to prep?</div>
+        <div class="screen-sub" id="cook-days-sub">Tap your prep day, then use the stepper to set how many days to plan for.</div>
+
+        <div id="week-strip" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:20px"></div>
+
+        <!-- Session panel -->
+        <div id="session-panel" style="display:none;border-radius:16px;overflow:hidden;margin-bottom:12px"></div>
+
+        <!-- Coverage summary -->
+        <div id="coverage-summary" style="min-height:40px;margin-top:4px"></div>
+      </div>
+      <div class="screen-footer">
+        <button class="btn-primary" onclick="goNext()">Continue</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 11: MEAL SELECTION
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s11">
+      <div class="progress-wrap"><button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><div class="progress-track"><div class="progress-fill" style="width:84%"></div></div></div>
+      <div class="screen-body" style="padding-top:90px" id="meal-sel-body">
+        <div class="screen-label">Pick your meals</div>
+        <div class="screen-title">Build your week</div>
+        <div class="screen-sub">Pick your meals for this week. After this, Maui builds your plan automatically every week — just swap anything you want.</div>
+        <div id="session-blocks"></div>
+      </div>
+      <div class="screen-footer">
+        <button class="btn-primary" onclick="checkMealSelectionAndContinue()">I'm happy with this</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 12: PLAN SUMMARY
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s12">
+      <div class="progress-wrap"><button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><div class="progress-track"><div class="progress-fill" style="width:91%"></div></div></div>
+      <div class="screen-body" style="padding-top:80px">
+        <div style="text-align:center;margin-bottom:28px">
+          <div style="font-size:40px;margin-bottom:12px">✨</div>
+          <div class="screen-title" style="margin-bottom:8px">Here's your week</div>
+          <div class="screen-sub" style="margin-bottom:0" id="summary-subtitle">6 meals across 2 cook sessions</div>
+        </div>
+        <div id="summary-sessions"></div>
+        <div id="macro-summary-block"></div>
+      </div>
+      <div class="screen-footer">
+        <button class="btn-primary" onclick="goNext()">Save my plan →</button>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 13: ACCOUNT CREATION
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s13">
+      <div class="progress-wrap"><div class="progress-track"><div class="progress-fill" style="width:96%"></div></div></div>
+      <div class="screen-body" style="padding-top:80px;display:flex;flex-direction:column;justify-content:center">
+        <div style="text-align:center;margin-bottom:36px">
+          <div class="maui-wordmark" style="font-size:28px;margin-bottom:8px">maui</div>
+          <div class="screen-title" style="font-size:22px;margin-bottom:8px">Save your plan</div>
+          <div class="screen-sub">Create an account to start your 30-day free trial.</div>
+        </div>
+
+        <button class="auth-btn" onclick="goNext()">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          Continue with Google
+        </button>
+        <button class="auth-btn" onclick="goNext()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          Continue with Apple
+        </button>
+        <div style="text-align:center;margin-top:8px">
+          <span style="font-size:13px;color:var(--gray)">or </span>
+          <span style="font-size:13px;color:var(--terra);cursor:pointer;font-weight:500" onclick="goNext()">sign up with email</span>
+        </div>
+        <p style="font-size:12px;color:var(--gray);text-align:center;margin-top:20px;line-height:1.5">30 days free, no credit card required.<br>Cancel any time.</p>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 14: LOADING / AI GENERATION
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s14">
+      <div class="screen-body" style="padding-top:50px">
+        <div class="loading-wrap">
+          <div class="loading-icon">🍽️</div>
+          <div class="screen-title" style="margin-bottom:8px">Building your plan</div>
+          <p style="font-size:15px;color:var(--gray);line-height:1.6">Maui is learning your flavor profile and building your week...</p>
+          <div class="loading-spinner"></div>
+          <div class="loading-steps" id="loading-steps">
+            <div class="loading-step active" id="ls1"><div class="loading-step-dot"></div>Analyzing your flavor profile</div>
+            <div class="loading-step" id="ls2"><div class="loading-step-dot"></div>Calculating portion sizes for your targets</div>
+            <div class="loading-step" id="ls3"><div class="loading-step-dot"></div>Grouping meals by cook session</div>
+            <div class="loading-step" id="ls4"><div class="loading-step-dot"></div>Generating your grocery list</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SCREEN 15: DASHBOARD
+    ═══════════════════════════════════════════ -->
+    <div class="screen" id="s15">
+      <div class="screen-body" style="padding-top:60px;padding-bottom:120px" id="dash-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div>
+            <p style="font-size:13px;color:var(--gray)">Welcome to</p>
+            <div class="maui-wordmark">maui</div>
+          </div>
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--terra-light);border:1.5px solid var(--terra-mid);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer">👤</div>
+        </div>
+
+        <div class="week-toggle">
+          <div class="week-tab active">This week</div>
+          <div class="week-tab">Past plans</div>
+        </div>
+
+        <div class="cal-grid">
+          <div class="cal-day-mini"><div class="cal-day-mini-label">Sun</div><div class="cal-day-mini-num">22</div></div>
+          <div class="cal-day-mini"><div class="cal-day-mini-label">Mon</div><div class="cal-day-mini-num">23</div><div class="cal-day-mini-dot"></div></div>
+          <div class="cal-day-mini"><div class="cal-day-mini-label">Tue</div><div class="cal-day-mini-num">24</div><div class="cal-day-mini-dot"></div></div>
+          <div class="cal-day-mini"><div class="cal-day-mini-label">Wed</div><div class="cal-day-mini-num today">25</div><div class="cal-day-mini-dot"></div></div>
+          <div class="cal-day-mini"><div class="cal-day-mini-label">Thu</div><div class="cal-day-mini-num">26</div><div class="cal-day-mini-dot"></div></div>
+          <div class="cal-day-mini"><div class="cal-day-mini-label">Fri</div><div class="cal-day-mini-num">27</div><div class="cal-day-mini-dot"></div></div>
+          <div class="cal-day-mini"><div class="cal-day-mini-label">Sat</div><div class="cal-day-mini-num">28</div></div>
+        </div>
+
+        <div id="ai-plan-output" style="margin-top:4px">
+          <div style="text-align:center;padding:40px 20px">
+            <div class="loading-spinner"></div>
+            <p style="font-size:14px;color:var(--gray);margin-top:12px">Loading your plan...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-nav">
+        <div class="nav-item active">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span class="nav-label">Plan</span>
+        </div>
+        <div class="nav-item">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>
+          <span class="nav-label">Groceries</span>
+        </div>
+        <div class="nav-item">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v4l3 3"/></svg>
+          <span class="nav-label">Recipes</span>
+        </div>
+        <div class="nav-item">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <span class="nav-label">Profile</span>
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+
+  </div><!-- /screens -->
+</div><!-- /device -->
+  <button onclick="resetProto()" style="position:fixed;bottom:28px;right:28px;background:rgba(28,28,26,.85);color:#F5F0E8;border:none;border-radius:100px;padding:10px 18px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;z-index:9999;backdrop-filter:blur(8px)">↺ Reset</button>
+  <button onclick="skipToCooking()" style="position:fixed;bottom:76px;right:28px;background:rgba(196,132,90,.92);color:#F5F0E8;border:none;border-radius:100px;padding:10px 18px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;z-index:9999;backdrop-filter:blur(8px)">→ Cooking step</button>
+
+<script>
+// ═══════════════════════════════════════════
+// RESET
+// ═══════════════════════════════════════════
+function skipToCooking() {
+  resetProto();
+  // Pre-fill enough state so downstream screens work
+  state.path = 'fitness';
+  state.tasteText = 'I love spicy Korean and Thai food';
+  state.cuisines = ['Korean','Thai','Italian'];
+  state.spice = 'hot';
+  state.goal = 'lose-fat';
+  state.macros = { cal:1820, pro:145, carb:182, fat:56 };
+  chatState = 'done';
+  // Navigate directly to s9
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active','exit','slide-from-left');
+    s.style.transform = '';
+  });
+  document.getElementById('s9').classList.add('active');
+  screenHistory.length = 0;
+  screenHistory.push('s1','s9');
+  currentScreen = 's9';
+}
+
+function resetProto() {
+  // Reset all screens
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active','exit','slide-from-left');
+    s.style.transform = '';
+  });
+  document.getElementById('s1').classList.add('active');
+  // Reset chat
+  const msgs = document.getElementById('chat-messages');
+  if (msgs) msgs.innerHTML = '<div class="chat-row"><div class="chat-avatar">🐱</div><div class="chat-bubble mise">Tell me what you love to eat. 🐱</div></div>';
+  const tasteInput = document.getElementById('taste-input');
+  if (tasteInput) { tasteInput.placeholder = 'e.g. spicy Korean, Thai, Italian...'; tasteInput.value = ''; }
+  const tasteFooter = document.getElementById('taste-footer');
+  if (tasteFooter) tasteFooter.style.display = 'none';
+  chatState = 'initial';
+  // Reset state
+  Object.assign(state, {
+    path:'fitness', stats:{ft:5,in:4,weight:130,age:28,sex:'female',activity:'moderate'},
+    macros:{cal:1820,pro:145,carb:182,fat:56}, goal:null, tasteText:'',
+    cuisines:[], spice:'hot', allergies:[], swipes:{liked:[],disliked:[]},
+    scope:'dinners', pattern:'batch', cookDays:[], cookDayIndices:[], sessionHorizons:{}, // no pre-selections
+    selectedMeals:{}, aiPlan:null
+  });
+  screenHistory.length = 0;
+  screenHistory.push('s1');
+  currentScreen = 's1';
+  selectPath('fitness');
+  swipeIdx = 0;
+}
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+const API_KEY = 'YOUR_API_KEY_HERE'; // ← Replace with your Anthropic API key before usability testing
+const state = {
+  path: null, // 'fitness' | 'health'
+  stats: { ft:5, in:4, weight:130, age:28, sex:'female', activity:'moderate' },
+  macros: { cal:1820, pro:145, carb:182, fat:56 },
+  goal: null,
+  tasteText: '',
+  cuisines: [],
+  spice: 'hot',
+  allergies: [],
+  swipes: { liked:[], disliked:[] },
+  scope: 'dinners',
+  pattern: 'batch', // 'batch' or 'daily'
+  cookDays: [],
+  sessionHorizons: {}, // map of prepDayIdx -> daysCount
+  selectedMeals: {},
+  aiPlan: null,
+};
+
+// ═══════════════════════════════════════════
+// SCREEN NAVIGATION
+// ═══════════════════════════════════════════
+const screenHistory = ['s1'];
+let currentScreen = 's1';
+
+function getMauiFlow() {
+  return ['s1','s2a','s3a','s35a','s8b','s4','s5','s6','s7','s9','s10','s11','s12','s13','s14','s15'];
+}
+
+function goNext() {
+  const flow = getMauiFlow();
+  const idx = flow.indexOf(currentScreen);
+  if (idx === -1 || idx >= flow.length - 1) return;
+  const next = flow[idx + 1];
+  navigateTo(next);
+  onScreenEnter(next);
+}
+
+function goBack() {
+  if (screenHistory.length < 2) return;
+  screenHistory.pop();
+  const prev = screenHistory[screenHistory.length - 1];
+  const cur = currentScreen;
+  document.getElementById(cur).classList.remove('active');
+  document.getElementById(cur).classList.add('slide-from-left');
+  document.getElementById(prev).classList.remove('exit');
+  document.getElementById(prev).classList.add('active');
+  setTimeout(() => {
+    document.getElementById(cur).classList.remove('slide-from-left');
+    document.getElementById(cur).style.transform = '';
+  }, 350);
+  currentScreen = prev;
+}
+
+function navigateTo(id) {
+  const cur = document.getElementById(currentScreen);
+  const next = document.getElementById(id);
+  // Clear any inline transform so CSS class takes over cleanly
+  next.style.transform = '';
+  next.style.transition = 'none';
+  next.getBoundingClientRect(); // force reflow
+  next.style.transition = '';
+  cur.classList.add('exit');
+  cur.classList.remove('active');
+  next.classList.add('active');
+  setTimeout(() => {
+    cur.classList.remove('exit');
+    cur.style.transform = '';
+  }, 400);
+  screenHistory.push(id);
+  currentScreen = id;
+}
+
+function onScreenEnter(id) {
+  if (id === 's35a') {
+    // Update trust headline based on goal + run macro calc if not done
+    calcMacros(true); // silent calc
+    const el = document.getElementById('trust-headline');
+    if (el) el.textContent = getTrustHeadline();
+    // Reset targets panel to hidden
+    const panel = document.getElementById('targets-panel');
+    const btn = document.getElementById('targets-toggle-btn');
+    if (panel) panel.style.display = 'none';
+    if (btn) btn.textContent = 'See your targets ↓';
+  }
+  if (id === 's4') {
+    // If already completed the taste chat, show continue button immediately
+    if (chatState === 'done') {
+      const footer = document.getElementById('taste-footer');
+      if (footer) footer.style.display = 'block';
+    }
+  }
+  if (id === 's5') buildCuisinePills();
+  if (id === 's7') buildSwipeCards();
+  if (id === 's9') updateCookDaysTitle();
+  if (id === 's10') { state.cookDayIndices = []; state.cookDays = []; updateCookDaysTitle(); buildDaySelector(); }
+  if (id === 's11') buildMealSelection();
+  if (id === 's12') buildSummary();
+  if (id === 's14') runLoadingSequence();
+}
+
+// ═══════════════════════════════════════════
+// SCREEN 1: PATH SELECTION
+// ═══════════════════════════════════════════
+function selectPath(p) {
+  state.path = p;
+  // Path cards removed in v2 — just set state
+  document.querySelectorAll('.path-card').forEach(c => c.classList.remove('selected'));
+  const el = document.getElementById('path-' + p);
+  if (el) el.classList.add('selected');
+}
+
+// Auto-select fitness by default (single path)
+state.path = 'fitness';
+
+// ═══════════════════════════════════════════
+// SCREEN 2A: STATS + MACRO CALC
+// ═══════════════════════════════════════════
+function setSex(s, btn) {
+  state.stats.sex = s;
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function calcMacros(silent) {
+  const ft = parseInt(document.getElementById('stat-ft').value) || 5;
+  const in_ = parseInt(document.getElementById('stat-in').value) || 4;
+  const w = parseFloat(document.getElementById('stat-weight').value) || 130;
+  const age = parseInt(document.getElementById('stat-age').value) || 28;
+  const act = document.getElementById('stat-activity').value || 'moderate';
+  state.stats = { ft, in: in_, weight: w, age, sex: state.stats.sex, activity: act };
+
+  // Mifflin-St Jeor
+  const heightCm = (ft * 12 + in_) * 2.54;
+  const weightKg = w * 0.453592;
+  let bmr = state.stats.sex === 'female'
+    ? 10 * weightKg + 6.25 * heightCm - 5 * age - 161
+    : 10 * weightKg + 6.25 * heightCm - 5 * age + 5;
+  const mults = { sedentary:1.2, light:1.375, moderate:1.55, active:1.725, 'very-active':1.9 };
+  let tdee = bmr * (mults[act] || 1.55);
+  if (state.goal === 'lose-fat') tdee -= 300;
+  if (state.goal === 'build-muscle') tdee += 200;
+
+  state.macros.cal = Math.round(tdee);
+  state.macros.pro = Math.round(weightKg * 2);
+  state.macros.carb = Math.round((tdee * 0.4) / 4);
+  state.macros.fat = Math.round((tdee * 0.28) / 9);
+
+  document.getElementById('m-cal').value = state.macros.cal;
+  document.getElementById('m-pro').value = state.macros.pro;
+  document.getElementById('m-carb').value = state.macros.carb;
+  document.getElementById('m-fat').value = state.macros.fat;
+  if (!silent) goNext();
+}
+
+function saveMacro(key, val) {
+  const v = parseInt(val) || 0;
+  state.macros[key] = v;
+  // If user edits protein, carbs, or fat — recalculate calories
+  if (key === 'pro' || key === 'carb' || key === 'fat') {
+    const newCal = (state.macros.pro * 4) + (state.macros.carb * 4) + (state.macros.fat * 9);
+    state.macros.cal = newCal;
+    const calInput = document.getElementById('m-cal');
+    if (calInput) calInput.value = newCal;
+  }
+  // If user edits calories directly — show a note
+  if (key === 'cal') {
+    const calcCal = (state.macros.pro * 4) + (state.macros.carb * 4) + (state.macros.fat * 9);
+    const diff = Math.abs(v - calcCal);
+    const note = document.getElementById('macro-cal-note');
+    if (note) {
+      if (diff > 50) {
+        note.textContent = "Heads up — this doesn't match your protein, carbs & fat totals (" + calcCal + " kcal). Maui will use the individual values.";
+        note.style.display = 'block';
+      } else {
+        note.style.display = 'none';
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════
+// SCREEN 3A: GOAL SELECTION
+// ═══════════════════════════════════════════
+function selectGoal(g, card) {
+  // Don't fire if user tapped the expand button itself
+  if (!card.classList) return;
+  state.goal = g;
+  document.querySelectorAll('.goal-card').forEach(c => {
+    c.classList.remove('selected');
+    const chk = c.querySelector('.goal-check svg');
+    if (chk) chk.style.display = 'none';
+  });
+  card.classList.add('selected');
+  const svg = card.querySelector('.goal-check svg');
+  if (svg) svg.style.display = 'block';
+}
+
+function toggleGoalExpand(e, panelId) {
+  e.stopPropagation(); // don't trigger selectGoal
+  const panel = document.getElementById(panelId);
+  const chevronId = 'gec-' + panelId.replace('ge-', '');
+  const chevron = document.getElementById(chevronId);
+  const isOpen = panel.classList.contains('open');
+
+  // Close all panels first
+  document.querySelectorAll('.goal-expand-panel').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.goal-expand-chevron').forEach(c => c.classList.remove('open'));
+
+  // Toggle the tapped one
+  if (!isOpen) {
+    panel.classList.add('open');
+    if (chevron) chevron.classList.add('open');
+  }
+}
+
+function getTrustHeadline() {
+  const g = state.goal;
+  const map = {
+    'lose-fat':     'support your body composition goal — higher protein, satisfying portions',
+    'body-recomp':  'support your body composition goal — higher protein, satisfying portions',
+    'build-muscle': 'support muscle building — generous protein, enough fuel to train',
+    'eat-better':   'help you eat better consistently — whole food ingredients, nothing bland',
+  };
+  const focus = map[g] || 'support your goals — good food, great flavour';
+  return "Based on your stats and goal, I\'ve set up your plan to " + focus + ".";
+}
+
+function toggleTargets() {
+  const panel = document.getElementById('targets-panel');
+  const btn = document.getElementById('targets-toggle-btn');
+  if (panel.style.display === 'none') {
+    panel.style.display = 'block';
+    btn.textContent = 'Hide targets ↑';
+  } else {
+    panel.style.display = 'none';
+    btn.textContent = 'See your targets ↓';
+  }
+}
+
+// ═══════════════════════════════════════════
+// SCREEN 4: TASTE CHAT
+// ═══════════════════════════════════════════
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+let chatState = 'initial'; // 'initial' | 'awaiting-excludes' | 'done'
+
+function submitTaste() {
+  const input = document.getElementById('taste-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  addChatMessage(text, 'user');
+  input.value = '';
+  input.style.height = 'auto';
+
+  if (chatState === 'initial') {
+    state.tasteText = text;
+    // Parse cuisines from text
+    const cuisineMap = {
+      'korean': 'Korean', 'thai': 'Thai', 'japanese': 'Japanese',
+      'vietnamese': 'Vietnamese', 'indian': 'Indian', 'italian': 'Italian',
+      'mexican': 'Mexican', 'american': 'American', 'mediterranean': 'Mediterranean',
+      'chinese': 'Chinese', 'middle eastern': 'Middle Eastern', 'greek': 'Greek'
+    };
+    const lower = text.toLowerCase();
+    state.cuisines = [];
+    for (const [k, v] of Object.entries(cuisineMap)) {
+      if (lower.includes(k)) state.cuisines.push(v);
+    }
+    if (state.cuisines.length === 0) state.cuisines = ['Mexican', 'Italian', 'American'];
+
+    setTimeout(() => {
+      const cuisineList = state.cuisines.join(', ');
+      addTyping();
+      setTimeout(() => {
+        removeTyping();
+        const lower2 = text.toLowerCase();
+        const hasFish = lower2.includes('fish') || lower2.includes('seafood') || lower2.includes('salmon');
+        const hasExclude = lower2.includes('hate') || lower2.includes("don't like") || lower2.includes('never') || lower2.includes('avoid') || hasFish;
+        const reply = `Got it — ${cuisineList} vibes${state.spice === 'hot' ? ', bring the heat 🌶️' : ''}. Is there anything you absolutely can't stand or would never eat?`;
+        addChatMessage(reply, 'mise');
+        chatState = 'awaiting-excludes';
+        // Update placeholder to reflect dislike examples
+        const inp = document.getElementById('taste-input');
+        if (inp) inp.placeholder = 'e.g. mushrooms, cilantro, fish...';
+      }, 1200);
+    }, 400);
+
+  } else if (chatState === 'awaiting-excludes') {
+    state.tasteText += ' Excludes: ' + text;
+    setTimeout(() => {
+      addTyping();
+      setTimeout(() => {
+        removeTyping();
+        addChatMessage("Perfect — I've got everything I need. Love it — let's lock in your cuisines.", 'mise');
+        chatState = 'done';
+        // Show continue button — user taps to advance, no auto-advance to avoid double-goNext
+        setTimeout(() => {
+          const footer = document.getElementById('taste-footer');
+          if (footer) footer.style.display = 'block';
+        }, 800);
+      }, 1000);
+    }, 400);
+  }
+}
+
+function addChatMessage(text, from) {
+  const wrap = document.getElementById('chat-messages');
+  const row = document.createElement('div');
+  row.className = 'chat-row' + (from === 'user' ? ' user-row' : '');
+  if (from === 'mise') {
+    const av = document.createElement('div');
+    av.className = 'chat-avatar';
+    av.textContent = '🐱';
+    row.appendChild(av);
+  }
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble ' + from;
+  bubble.textContent = text;
+  row.appendChild(bubble);
+  wrap.appendChild(row);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function addTyping() {
+  const wrap = document.getElementById('chat-messages');
+  const row = document.createElement('div');
+  row.className = 'chat-row';
+  row.id = 'typing-row';
+  const av = document.createElement('div');
+  av.className = 'chat-avatar';
+  av.textContent = 'M';
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble mise';
+  bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  row.appendChild(av);
+  row.appendChild(bubble);
+  wrap.appendChild(row);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-row');
+  if (t) t.remove();
+}
+
+// ═══════════════════════════════════════════
+// SCREEN 5: CUISINE PILLS
+// ═══════════════════════════════════════════
+const allCuisines = ['Mexican','Italian','American','Mediterranean','Japanese','Thai','Korean','Indian','Vietnamese','Middle Eastern','Chinese','Greek'];
+
+function buildCuisinePills() {
+  const wrap = document.getElementById('cuisine-pills');
+  wrap.innerHTML = '';
+  allCuisines.forEach(c => {
+    const p = document.createElement('div');
+    p.className = 'pill' + (state.cuisines.includes(c) ? ' selected' : '');
+    p.textContent = c;
+    p.onclick = () => {
+      p.classList.toggle('selected');
+      if (p.classList.contains('selected')) {
+        if (!state.cuisines.includes(c)) state.cuisines.push(c);
+      } else {
+        state.cuisines = state.cuisines.filter(x => x !== c);
+      }
+    };
+    wrap.appendChild(p);
+  });
+}
+
+// ═══════════════════════════════════════════
+// SCREEN 6: SPICE + ALLERGIES
+// ═══════════════════════════════════════════
+function selectSpice(s, btn) {
+  state.spice = s;
+  document.querySelectorAll('.spice-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function saveOtherAllergy(val) {
+  const trimmed = val.trim();
+  // Remove any previous 'other' entry
+  state.allergies = state.allergies.filter(x => !x.startsWith('other:'));
+  if (trimmed) state.allergies.push('other:' + trimmed);
+}
+
+function toggleAllergy(el, a) {
+  el.classList.toggle('selected');
+  if (a === 'none') {
+    state.allergies = [];
+    document.querySelectorAll('.allergy-pill').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+    return;
+  }
+  document.querySelector('.allergy-pill:last-child').classList.remove('selected');
+  if (el.classList.contains('selected')) {
+    if (!state.allergies.includes(a)) state.allergies.push(a);
+  } else {
+    state.allergies = state.allergies.filter(x => x !== a);
+  }
+}
+
+// ═══════════════════════════════════════════
+// SCREEN 7: TINDER SWIPE
+// ═══════════════════════════════════════════
+const swipeDishes = [
+  { name: 'Korean BBQ Beef Bowl', tags: ['Bold', 'Spicy', '35 min'], emoji: '🥩', bg: '#f0a870' },
+  { name: 'Spicy Thai Basil Chicken', tags: ['Spicy', 'Fresh', '25 min'], emoji: '🍜', bg: '#70b490' },
+  { name: 'Marry Me Chicken', tags: ['Creamy', 'Savory', '30 min'], emoji: '🥘', bg: '#f0c870' },
+  { name: 'Teriyaki Salmon Bowl', tags: ['Light', 'Umami', '20 min'], emoji: '🍱', bg: '#b0d0f0' },
+  { name: 'Spicy Tuna Poke Bowl', tags: ['Fresh', 'Spicy', '15 min'], emoji: '🐟', bg: '#f0b0b0' },
+  { name: 'Chicken Tikka Masala', tags: ['Rich', 'Spicy', '40 min'], emoji: '🍛', bg: '#f0c0a0' },
+  { name: 'Vietnamese Lemongrass Beef', tags: ['Aromatic', 'Bold', '30 min'], emoji: '🥗', bg: '#c0e0b0' },
+  { name: 'Garlic Butter Shrimp Pasta', tags: ['Savory', 'Comfort', '25 min'], emoji: '🍝', bg: '#f0e0b0' },
+  { name: 'Chipotle Chicken Tacos', tags: ['Smoky', 'Spicy', '20 min'], emoji: '🌮', bg: '#f0a0a0' },
+  { name: 'Greek Lemon Chicken', tags: ['Bright', 'Herby', '35 min'], emoji: '🍋', bg: '#f0f0b0' },
+];
+
+let swipeIdx = 0;
+
+function buildSwipeCards() {
+  const stack = document.getElementById('swipe-stack');
+  stack.innerHTML = '';
+  swipeIdx = 0;
+  swipeDishes.slice(0, 3).forEach((d, i) => {
+    const card = createSwipeCard(d, i);
+    stack.appendChild(card);
+  });
+  updateSwipeTop();
+  initSwipeDrag();
+}
+
+function createSwipeCard(dish, zOffset) {
+  const card = document.createElement('div');
+  card.className = 'swipe-card';
+  card.style.zIndex = 10 - zOffset;
+  card.style.transform = `scale(${1 - zOffset * 0.04}) translateY(${zOffset * 10}px)`;
+  card.id = 'scard-' + zOffset;
+  card.innerHTML = `
+    <div style="position:relative">
+      <div class="swipe-indicator like">👍 Love it</div>
+      <div class="swipe-indicator nope">👎 Nope</div>
+      <div class="swipe-card-img" style="background:${dish.bg}">${dish.emoji}</div>
+    </div>
+    <div class="swipe-card-info">
+      <div class="swipe-card-title">${dish.name}</div>
+      <div class="swipe-card-tags">${dish.tags.map(t => `<span class="swipe-card-tag">${t}</span>`).join('')}</div>
+    </div>`;
+  return card;
+}
+
+function updateSwipeTop() {
+  document.getElementById('swipe-count').textContent = swipeIdx + ' of ' + swipeDishes.length + ' swiped';
+}
+
+function swipeCard(dir) {
+  const stack = document.getElementById('swipe-stack');
+  const top = stack.firstChild;
+  if (!top) return;
+
+  const dish = swipeDishes[swipeIdx];
+  if (dir === 'right') state.swipes.liked.push(dish.name);
+  else state.swipes.disliked.push(dish.name);
+
+  top.style.transition = 'transform .3s ease, opacity .3s ease';
+  top.style.transform = `translateX(${dir === 'right' ? 400 : -400}px) rotate(${dir === 'right' ? 20 : -20}deg)`;
+  top.style.opacity = '0';
+  setTimeout(() => { if (top.parentNode) top.remove(); }, 320);
+
+  swipeIdx++;
+  updateSwipeTop();
+
+  // Promote remaining cards
+  Array.from(stack.children).forEach((c, i) => {
+    c.style.transition = 'transform .3s ease';
+    c.style.transform = `scale(${1 - i * 0.04}) translateY(${i * 10}px)`;
+    c.style.zIndex = 10 - i;
+  });
+
+  // Add next card
+  if (swipeIdx + 2 < swipeDishes.length) {
+    setTimeout(() => {
+      const next = createSwipeCard(swipeDishes[swipeIdx + 2], 2);
+      next.style.transform = 'scale(0.92) translateY(20px)';
+      stack.appendChild(next);
+    }, 150);
+  }
+
+  if (swipeIdx >= swipeDishes.length) {
+    stack.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:12px"><div style="font-size:48px">✨</div><div style="font-size:16px;font-weight:500;color:var(--dark)">All done!</div><div style="font-size:14px;color:var(--gray)">I\'ve got a great feel for your taste.</div></div>';
+  }
+}
+
+// Drag-to-swipe
+function initSwipeDrag() {
+  const stack = document.getElementById('swipe-stack');
+  let startX = 0, startY = 0, isDragging = false, currentCard = null;
+
+  stack.addEventListener('pointerdown', e => {
+    currentCard = stack.firstChild;
+    if (!currentCard) return;
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    currentCard.setPointerCapture(e.pointerId);
+  });
+
+  stack.addEventListener('pointermove', e => {
+    if (!isDragging || !currentCard) return;
+    const dx = e.clientX - startX;
+    const rotation = dx * 0.08;
+    currentCard.style.transition = 'none';
+    currentCard.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
+    const likeInd = currentCard.querySelector('.swipe-indicator.like');
+    const nopeInd = currentCard.querySelector('.swipe-indicator.nope');
+    if (likeInd) likeInd.style.opacity = Math.max(0, dx / 80);
+    if (nopeInd) nopeInd.style.opacity = Math.max(0, -dx / 80);
+  });
+
+  stack.addEventListener('pointerup', e => {
+    if (!isDragging || !currentCard) return;
+    isDragging = false;
+    const dx = e.clientX - startX;
+    if (Math.abs(dx) > 80) swipeCard(dx > 0 ? 'right' : 'left');
+    else {
+      currentCard.style.transition = 'transform .3s ease';
+      currentCard.style.transform = 'scale(1) translateY(0)';
+      const likeInd = currentCard.querySelector('.swipe-indicator.like');
+      const nopeInd = currentCard.querySelector('.swipe-indicator.nope');
+      if (likeInd) likeInd.style.opacity = 0;
+      if (nopeInd) nopeInd.style.opacity = 0;
+    }
+    currentCard = null;
+  });
+}
+
+// ═══════════════════════════════════════════
+// SCREEN 8B: MEAL SCOPE
+// ═══════════════════════════════════════════
+function selectScope(s, card) {
+  state.scope = s;
+  document.querySelectorAll('.scope-card').forEach(c => {
+    c.classList.remove('selected');
+    c.querySelector('.scope-check').innerHTML = '';
+  });
+  card.classList.add('selected');
+  card.querySelector('.scope-check').innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+// ═══════════════════════════════════════════
+// SCREEN 9: COOKING PATTERN
+// ═══════════════════════════════════════════
+function selectPattern(p, card) {
+  state.pattern = p;
+  document.querySelectorAll('.pattern-card').forEach(c => {
+    c.classList.remove('selected');
+    c.querySelector('.goal-check svg').style.display = 'none';
+  });
+  card.classList.add('selected');
+  card.querySelector('.goal-check svg').style.display = 'block';
+}
+
+function selectHorizon(days, card) {
+  state.planningHorizon = days;
+  document.querySelectorAll('#s95 .scope-card').forEach(c => {
+    c.classList.remove('selected');
+    c.querySelector('.scope-check').innerHTML = '';
+  });
+  card.classList.add('selected');
+  card.querySelector('.scope-check').innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+function updateCookDaysTitle() {
+  const el = document.getElementById('cook-days-title');
+  const sub = document.getElementById('cook-days-sub');
+  if (!el) return;
+  if (state.pattern === 'daily') {
+    el.textContent = 'Which days do you want to cook?';
+    if (sub) sub.textContent = "Tap the days you cook. Maui plans a fresh meal for each.";
+  } else {
+    el.textContent = 'Which days do you want to prep?';
+    if (sub) sub.textContent = "Tap your prep days. Maui shows which days each session covers.";
+  }
+}
+
+// ═══════════════════════════════════════════
+// SCREEN 10: DAY SELECTOR
+// ═══════════════════════════════════════════
+// Session color palette — each prep day gets its own accent color
+const SESSION_COLORS = [
+  { solid:'#C4845A', light:'#FDF6F1', mid:'#E8C4A8' },   // terracotta
+  { solid:'#4A7BA7', light:'#EBF3FB', mid:'#A8C8E8' },   // blue
+  { solid:'#7A9E7E', light:'#EAF3DE', mid:'#B8D8BC' },   // green
+  { solid:'#C9A84C', light:'#FDF9EE', mid:'#E8D8A8' },   // amber
+];
+function getSessionColor(i) { return SESSION_COLORS[i % SESSION_COLORS.length]; }
+
+const weekDays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const weekDaysShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function getCoverageForDay(idx, allSelected) {
+  // Coverage starts ON the prep day, ends the day before the next prep day
+  // If it's the last prep day of the week, covers until Saturday (idx 6)
+  const sorted = [...allSelected].sort((a,b)=>a-b);
+  const pos = sorted.indexOf(idx);
+  const isLast = pos === sorted.length - 1;
+  // Last prep day covers until end of week (Sat = 6), not wrapping into next week
+  const nextPrepIdx = isLast ? 7 : sorted[pos+1];
+  const gapDays = nextPrepIdx - idx;
+  const coverDays = [];
+  for (let d = 0; d < gapDays && d <= 6; d++) {
+    const dayIdx = idx + d;
+    if (dayIdx <= 6) coverDays.push(weekDaysShort[dayIdx]);
+  }
+  return coverDays.length > 0 ? coverDays.join(', ') : weekDaysShort[idx];
+}
+
+function buildDaySelector() {
+  const strip = document.getElementById('week-strip');
+  if (!strip) return;
+  strip.innerHTML = '';
+  if (!state.cookDayIndices) state.cookDayIndices = [];
+
+  weekDaysShort.forEach((dayShort, idx) => {
+    const cell = document.createElement('div');
+    cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer';
+    cell.dataset.idx = idx;
+
+    const label = document.createElement('div');
+    label.style.cssText = 'font-size:11px;color:var(--gray);font-weight:500';
+    label.textContent = dayShort;
+
+    const circle = document.createElement('div');
+    circle.style.cssText = 'width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;transition:all .2s';
+    circle.textContent = idx + 22; // approximate March date
+
+    cell.appendChild(label);
+    cell.appendChild(circle);
+
+    cell.onclick = () => {
+      if (state.pattern === 'daily') {
+        // Fresh: toggle individual days
+        if (state.cookDayIndices.includes(idx)) {
+          state.cookDayIndices = state.cookDayIndices.filter(x => x !== idx);
+        } else {
+          state.cookDayIndices.push(idx);
+        }
+        state.cookDays = state.cookDayIndices.map(i => i + 22);
+        renderWeekStrip();
+      } else {
+        // Batch: tap selects/deselects and opens per-session panel
+        if (state.cookDayIndices.includes(idx)) {
+          if (activePanelDay === idx) {
+            // Tap active day again = deselect + close panel
+            state.cookDayIndices = state.cookDayIndices.filter(x => x !== idx);
+            delete state.sessionHorizons[idx];
+            closeSessionPanel();
+          } else {
+            // Tap different selected day = switch panel to that session
+            openSessionPanel(idx);
+          }
+        } else {
+          // New selection — add and open panel
+          state.cookDayIndices.push(idx);
+          if (!state.sessionHorizons[idx]) {
+            // Auto-set horizon: min(4, days remaining until next prep day or end of week)
+            const newSorted = [...state.cookDayIndices].sort((a,b)=>a-b);
+            const pos = newSorted.indexOf(idx);
+            const nextPrep = newSorted[pos+1];
+            const maxDays = nextPrep !== undefined ? nextPrep - idx : 7 - idx;
+            state.sessionHorizons[idx] = Math.min(4, maxDays);
+            // Also shrink any preceding session that now overlaps
+            if (pos > 0) {
+              const prevPrep = newSorted[pos-1];
+              const prevMax = idx - prevPrep;
+              if ((state.sessionHorizons[prevPrep] || 4) > prevMax) {
+                state.sessionHorizons[prevPrep] = prevMax;
+              }
+            }
+          }
+          openSessionPanel(idx);
+        }
+        state.cookDays = state.cookDayIndices.map(i => i + 22);
+        renderWeekStrip();
+      }
+    };
+    strip.appendChild(cell);
+  });
+  renderWeekStrip();
+
+  // Close session panel on fresh build
+  closeSessionPanel();
+}
+
+function renderWeekStrip() {
+  const strip = document.getElementById('week-strip');
+  if (!strip) return;
+  const cells = strip.querySelectorAll('[data-idx]');
+  const sorted = [...state.cookDayIndices].sort((a,b) => a-b);
+
+  // Build day -> {sessionIdx, isPrepDay} map
+  const dayMap = {};
+  if (state.pattern === 'batch') {
+    sorted.forEach((prepDay, sessionIdx) => {
+      // Cap coverage at gap to next prep day so sessions don't overlap
+      const maxCover = getSessionMaxDays(prepDay);
+      const horizon = Math.min(getSessionHorizon(prepDay), maxCover);
+      for (let d = 0; d < horizon && prepDay + d <= 6; d++) {
+        if (d === 0 || !dayMap[prepDay + d]) {
+          dayMap[prepDay + d] = { sessionIdx, isPrepDay: d === 0 };
+        }
+      }
+    });
+  }
+
+  cells.forEach(cell => {
+    const idx = parseInt(cell.dataset.idx);
+    const circle = cell.querySelector('div:last-child');
+    const entry = dayMap[idx];
+    const isFreshSelected = state.pattern === 'daily' && state.cookDayIndices.includes(idx);
+
+    if (entry) {
+      const col = getSessionColor(entry.sessionIdx);
+      if (entry.isPrepDay) {
+        circle.style.cssText = 'width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;transition:all .2s;background:' + col.solid + ';color:#F5F0E8;box-shadow:0 2px 8px rgba(0,0,0,.15)';
+      } else {
+        circle.style.cssText = 'width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;transition:all .2s;background:' + col.light + ';color:' + col.solid + ';border:1.5px dashed ' + col.mid;
+      }
+    } else if (isFreshSelected) {
+      const col = getSessionColor(sorted.indexOf(idx));
+      circle.style.cssText = 'width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;transition:all .2s;background:#7A9E7E;color:#F5F0E8;box-shadow:0 2px 8px rgba(0,0,0,.15)';
+    } else {
+      circle.style.cssText = 'width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;transition:all .2s;background:var(--white);color:var(--dark);border:1.5px solid var(--border)';
+    }
+  });
+  updateCoverageSummary();
+}
+
+// Currently active panel prep day index
+let activePanelDay = null;
+
+function getSessionHorizon(prepDayIdx) {
+  return state.sessionHorizons[prepDayIdx] !== undefined ? state.sessionHorizons[prepDayIdx] : 4;
+}
+
+function getSessionMaxDays(prepDayIdx) {
+  const sorted = [...state.cookDayIndices].sort((a,b) => a-b);
+  const pos = sorted.indexOf(prepDayIdx);
+  const nextPrepDay = sorted[pos + 1];
+  return nextPrepDay !== undefined ? nextPrepDay - prepDayIdx : 7 - prepDayIdx;
+}
+
+function adjustHorizon(delta, prepDayIdx) {
+  const current = getSessionHorizon(prepDayIdx);
+  const maxDays = getSessionMaxDays(prepDayIdx);
+  const newVal = Math.min(maxDays, Math.max(1, current + delta));
+  state.sessionHorizons[prepDayIdx] = newVal;
+  openSessionPanel(prepDayIdx);
+  renderWeekStrip();
+}
+
+function openSessionPanel(prepDayIdx) {
+  activePanelDay = prepDayIdx;
+  const panel = document.getElementById('session-panel');
+  if (!panel) return;
+  const sorted = [...state.cookDayIndices].sort((a,b) => a-b);
+  const sessionIdx = sorted.indexOf(prepDayIdx);
+  const col = getSessionColor(sessionIdx);
+  const horizon = getSessionHorizon(prepDayIdx);
+
+  // Calculate coverage for this session
+  const coverDays = [];
+  for (let d = 0; d < horizon && prepDayIdx + d <= 6; d++) {
+    coverDays.push(weekDaysShort[prepDayIdx + d]);
+  }
+
+  panel.style.display = 'block';
+  panel.style.border = '1.5px solid ' + col.solid;
+  panel.style.background = col.light;
+  panel.innerHTML =
+    // Header
+    '<div style="display:flex;align-items:center;gap:8px;padding:14px 16px 10px">' +
+      '<span style="width:10px;height:10px;border-radius:50%;background:' + col.solid + ';flex-shrink:0"></span>' +
+      '<span style="font-size:14px;font-weight:600;color:' + col.solid + '">' + weekDays[prepDayIdx] + ' session</span>' +
+    '</div>' +
+    // Divider
+    '<div style="height:1px;background:' + col.mid + ';margin:0 16px"></div>' +
+    // Stepper
+    '<div style="padding:12px 16px">' +
+      '<div style="font-size:12px;color:var(--gray);margin-bottom:10px">How many days do you want this session to cover? <span style="color:' + col.solid + ';font-weight:500">(max ' + getSessionMaxDays(prepDayIdx) + ')</span></div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between">' +
+        '<button onclick="adjustHorizon(-1,' + prepDayIdx + ')" style="width:36px;height:36px;border-radius:50%;border:1.5px solid ' + col.mid + ';background:var(--white);font-size:18px;cursor:pointer;color:' + col.solid + ';display:flex;align-items:center;justify-content:center">−</button>' +
+        '<div style="text-align:center">' +
+          '<div style="font-size:26px;font-weight:600;color:' + col.solid + '">' + horizon + '</div>' +
+          '<div style="font-size:11px;color:var(--gray)">' + (horizon === 1 ? 'day' : 'days') + '</div>' +
+        '</div>' +
+        '<button onclick="adjustHorizon(1,' + prepDayIdx + ')" style="width:36px;height:36px;border-radius:50%;border:1.5px solid ' + col.mid + ';background:var(--white);font-size:18px;cursor:pointer;color:' + col.solid + ';display:flex;align-items:center;justify-content:center">+</button>' +
+      '</div>' +
+    '</div>' +
+    // Coverage preview
+    '<div style="padding:0 16px 14px;font-size:12px;color:' + col.solid + ';font-weight:500;text-align:center">' +
+      'Covers ' + coverDays.join(', ') +
+    '</div>';
+}
+
+function closeSessionPanel() {
+  activePanelDay = null;
+  const panel = document.getElementById('session-panel');
+  if (panel) panel.style.display = 'none';
+}
+
+function updateCoverageSummary() {
+  const el = document.getElementById('coverage-summary');
+  if (!el) return;
+  el.innerHTML = '';
+  if (state.cookDayIndices.length === 0) return;
+  const sorted = [...state.cookDayIndices].sort((a,b) => a-b);
+
+  if (state.pattern === 'daily') {
+    const line = document.createElement('div');
+    line.style.cssText = 'font-size:13px;color:var(--gray);text-align:center';
+    line.textContent = sorted.map(d => weekDaysShort[d]).join(', ') + ' selected';
+    el.appendChild(line);
+    return;
+  }
+
+  // Batch: one colored line per session
+  sorted.forEach((prepDay, sessionIdx) => {
+    const col = getSessionColor(sessionIdx);
+    const maxCov = getSessionMaxDays(prepDay);
+    const horizon = Math.min(getSessionHorizon(prepDay), maxCov);
+    const coverDays = [];
+    for (let d = 0; d < horizon && prepDay + d <= 6; d++) {
+      coverDays.push(weekDaysShort[prepDay + d]);
+    }
+    const line = document.createElement('div');
+    line.style.cssText = 'display:flex;align-items:center;gap:6px;justify-content:center;margin-bottom:3px';
+    line.innerHTML =
+      '<span style="width:8px;height:8px;border-radius:50%;background:' + col.solid + ';flex-shrink:0"></span>' +
+      '<span style="font-size:13px;font-weight:500;color:' + col.solid + '">' + weekDays[prepDay] + '</span>' +
+      '<span style="font-size:13px;color:var(--gray)">covers ' + coverDays.join(', ') + '</span>';
+    el.appendChild(line);
+  });
+
+  // Flexible days remaining
+  const lastPrep = sorted[sorted.length - 1];
+  const lastCovered = Math.min(6, lastPrep + getSessionHorizon(lastPrep) - 1);
+  if (lastCovered < 6) {
+    const flexDays = [];
+    for (let d = lastCovered + 1; d <= 6; d++) flexDays.push(weekDaysShort[d]);
+    const flex = document.createElement('div');
+    flex.style.cssText = 'font-size:12px;color:var(--gray);text-align:center;margin-top:2px';
+    flex.textContent = flexDays.join(', ') + ' stays flexible';
+    el.appendChild(flex);
+  }
+}
+
+function updateCoveragePreview() {
+  const el = document.getElementById('coverage-preview');
+  if (!el) return;
+  const selected = [...state.cookDayIndices].sort((a,b) => a-b);
+  if (selected.length === 0) {
+    el.innerHTML = '<p style="font-size:13px;color:var(--gray);text-align:center">Select at least one day to see your prep schedule</p>';
+    return;
+  }
+  let html = '<div style="display:flex;flex-direction:column;gap:8px">';
+  selected.forEach((dayIdx, i) => {
+    const nextIdx = selected[i+1] !== undefined ? selected[i+1] : selected[0] + 7;
+    const coverCount = nextIdx - dayIdx - 1;
+    const coverDays = [];
+    for (let d = 1; d <= coverCount && d <= 6; d++) {
+      coverDays.push(weekDaysShort[(dayIdx + d) % 7]);
+    }
+    const coverStr = coverDays.length > 0 ? coverDays.join(', ') : 'next day only';
+    html += '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">' +
+      '<div><div style="font-size:13px;font-weight:500;color:var(--terra)">' + weekDays[dayIdx] + '</div>' +
+      '<div style="font-size:12px;color:var(--gray);margin-top:2px">prep day</div></div>' +
+      '<div style="text-align:right"><div style="font-size:12px;color:var(--dark);font-weight:500">covers</div>' +
+      '<div style="font-size:12px;color:var(--gray)">' + coverStr + '</div></div>' +
+      '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ─────────────────────────────────────────────
+// FRESH COOK MEAL SELECTION — unified by meal type
+// ─────────────────────────────────────────────
+function buildFreshMealSelection(sessions, mealTypes) {
+  const body = document.getElementById('session-blocks');
+  const sortedDays = [...state.cookDayIndices].sort((a,b) => a-b);
+  const dayCount = sortedDays.length;
+  const poolSize = dayCount + 3; // selected days + 3 for variety
+
+  // Init fresh selections state
+  state.freshSelections = {}; // mealType -> [{recipe, dayIdx, cardEl}]
+  mealTypes.forEach(mt => { state.freshSelections[mt] = []; });
+  // Also init selectedMeals with one virtual session
+  state.selectedMeals['fresh-week'] = [];
+
+  // Header
+  const header = document.createElement('div');
+  header.style.cssText = 'margin-bottom:20px;padding:14px 16px;background:var(--white);border-radius:16px;border:1px solid var(--border)';
+  header.innerHTML =
+    '<div style="font-size:13px;font-weight:500;color:var(--dark);margin-bottom:4px">Pick your meals for the week</div>' +
+    '<div style="font-size:12px;color:var(--gray)">Select ' + dayCount + ' of each to fill every day. Tap a day tag to reassign.</div>';
+  body.appendChild(header);
+
+  mealTypes.forEach(mealType => {
+    const typeColors = {
+      Breakfast:{bg:'#EBF3FB',color:'#4A7BA7'},
+      Lunch:{bg:'#EAF3DE',color:'#7A9E7E'},
+      Dinner:{bg:'var(--terra-light)',color:'var(--terra)'},
+      Snack:{bg:'#FDF9EE',color:'#C9A84C'},
+    };
+    const tc = typeColors[mealType] || {bg:'var(--border)',color:'var(--gray)'};
+
+    const section = document.createElement('div');
+    section.style.cssText = 'margin-bottom:28px';
+
+    // Section header with count
+    const sectionHead = document.createElement('div');
+    sectionHead.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:10px';
+    sectionHead.innerHTML =
+      '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:' + tc.color + '">' + mealType + '</div>' +
+      '<div id="fresh-count-' + mealType + '" style="font-size:12px;color:var(--gray)">0 of ' + dayCount + ' days filled</div>';
+    section.appendChild(sectionHead);
+
+    // Horizontal strip
+    const strip = document.createElement('div');
+    strip.style.cssText = 'display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;padding-right:24px;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x mandatory';
+
+    const pool = getPoolForType(mealType, {type:'fresh', daysCount:1, maxCookMins:90});
+    const extendedPool = shuffleArray(pool.concat(getPoolForType(mealType, {type:'fresh', daysCount:1, maxCookMins:90}))).slice(0, poolSize);
+
+    extendedPool.forEach(r => {
+      const tile = document.createElement('div');
+      tile.style.cssText = 'flex-shrink:0;width:160px;border:1.5px solid var(--border);border-radius:16px;overflow:hidden;cursor:pointer;transition:border-color .2s,background .2s;background:var(--white);scroll-snap-align:start;position:relative';
+      tile.dataset.selected = '0';
+      tile.dataset.mealType = mealType;
+
+      tile.innerHTML =
+        '<div style="width:100%;height:90px;background:' + r.bg + ';display:flex;align-items:center;justify-content:center;font-size:40px;position:relative">' +
+          r.emoji +
+          // Day tag — hidden until selected
+          '<div class="day-tag" style="display:none;position:absolute;top:8px;left:8px;background:var(--dark);color:var(--cream);font-size:10px;font-weight:600;padding:3px 8px;border-radius:100px;cursor:pointer"></div>' +
+          // Checkmark
+          '<div class="tile-check" style="display:none;position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:50%;background:var(--terra);align-items:center;justify-content:center">' +
+            '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '</div>' +
+        '</div>' +
+        '<div style="padding:10px 12px">' +
+          '<div style="font-size:13px;font-weight:500;color:var(--dark);line-height:1.3;margin-bottom:3px">' + r.name + '</div>' +
+          '<div style="font-size:11px;color:var(--gray)">' + r.meta + '</div>' +
+        '</div>';
+
+      // Tap tile to select/deselect
+      tile.onclick = (e) => {
+        // If tapping the day tag, handle separately
+        if (e.target.classList.contains('day-tag') || e.target.closest('.day-tag')) return;
+
+        const isSelected = tile.dataset.selected === '1';
+        if (isSelected) {
+          // Deselect — free up the day
+          deselectFreshTile(tile, mealType);
+        } else {
+          // Select — assign next available day
+          const nextDay = getNextAvailableDay(mealType, sortedDays);
+          if (nextDay === null) {
+            // All days filled — show gentle shake
+            tile.style.animation = 'shake .3s';
+            setTimeout(() => tile.style.animation = '', 300);
+            return;
+          }
+          selectFreshTile(tile, mealType, nextDay, r, sortedDays);
+        }
+      };
+
+      // Day tag tap — cycle to next available day
+      tile.querySelector('.day-tag').onclick = (e) => {
+        e.stopPropagation();
+        if (tile.dataset.selected !== '1') return;
+        const currentDay = parseInt(tile.dataset.dayIdx);
+        cycleFreshTileDay(tile, mealType, currentDay, sortedDays, r);
+      };
+
+      strip.appendChild(tile);
+    });
+    section.appendChild(strip);
+    body.appendChild(section);
+  });
+}
+
+function getNextAvailableDay(mealType, sortedDays) {
+  const assigned = state.freshSelections[mealType].map(s => s.dayIdx);
+  for (const day of sortedDays) {
+    if (!assigned.includes(day)) return day;
+  }
+  return null;
+}
+
+function selectFreshTile(tile, mealType, dayIdx, recipe, sortedDays) {
+  tile.dataset.selected = '1';
+  tile.dataset.dayIdx = dayIdx;
+  tile.style.border = '1.5px solid var(--terra)';
+  tile.style.background = 'var(--terra-light)';
+  tile.querySelector('.tile-check').style.display = 'flex';
+
+  const tag = tile.querySelector('.day-tag');
+  tag.textContent = weekDaysShort[dayIdx];
+  tag.style.display = 'block';
+  tag.title = 'Tap to reassign day';
+
+  state.freshSelections[mealType].push({ dayIdx, recipe, tile });
+  // Sync to selectedMeals for summary/API
+  syncFreshSelections();
+  updateFreshCount(mealType, sortedDays.length);
+}
+
+function deselectFreshTile(tile, mealType) {
+  const dayIdx = parseInt(tile.dataset.dayIdx);
+  tile.dataset.selected = '0';
+  delete tile.dataset.dayIdx;
+  tile.style.border = '1.5px solid var(--border)';
+  tile.style.background = 'var(--white)';
+  tile.querySelector('.tile-check').style.display = 'none';
+  tile.querySelector('.day-tag').style.display = 'none';
+
+  state.freshSelections[mealType] = state.freshSelections[mealType].filter(s => s.tile !== tile);
+  syncFreshSelections();
+  updateFreshCount(mealType, state.cookDayIndices.length);
+}
+
+function cycleFreshTileDay(tile, mealType, currentDay, sortedDays, recipe) {
+  // Find next available day after current
+  const assigned = state.freshSelections[mealType].filter(s => s.tile !== tile).map(s => s.dayIdx);
+  const currentPos = sortedDays.indexOf(currentDay);
+  let nextDay = null;
+  // Try days after current first, then wrap
+  for (let i = 1; i <= sortedDays.length; i++) {
+    const candidate = sortedDays[(currentPos + i) % sortedDays.length];
+    if (!assigned.includes(candidate)) { nextDay = candidate; break; }
+  }
+  if (nextDay === null || nextDay === currentDay) return; // no change possible
+
+  // Update state
+  const entry = state.freshSelections[mealType].find(s => s.tile === tile);
+  if (entry) entry.dayIdx = nextDay;
+  tile.dataset.dayIdx = nextDay;
+
+  // Animate tag change
+  const tag = tile.querySelector('.day-tag');
+  tag.style.opacity = '0';
+  setTimeout(() => {
+    tag.textContent = weekDaysShort[nextDay];
+    tag.style.opacity = '1';
+  }, 150);
+
+  syncFreshSelections();
+}
+
+function syncFreshSelections() {
+  // Merge all fresh selections into selectedMeals['fresh-week']
+  state.selectedMeals['fresh-week'] = [];
+  Object.entries(state.freshSelections).forEach(([mealType, selections]) => {
+    selections.forEach(s => {
+      state.selectedMeals['fresh-week'].push({ ...s.recipe, mealType, dayIdx: s.dayIdx });
+    });
+  });
+}
+
+function updateFreshCount(mealType, totalDays) {
+  const el = document.getElementById('fresh-count-' + mealType);
+  if (!el) return;
+  const count = (state.freshSelections[mealType] || []).length;
+  el.textContent = count + ' of ' + totalDays + ' days filled';
+  el.style.color = count === totalDays ? '#7A9E7E' : 'var(--gray)';
+}
+
+// ═══════════════════════════════════════════
+// SCREEN 11: MEAL SELECTION
+// ═══════════════════════════════════════════
+const recipePool = [
+  { name:'Korean BBQ Beef Bowl', emoji:'🥩', meta:'Bold · spicy · 35 min', bg:'#f0a870' },
+  { name:'Spicy Thai Basil Chicken', emoji:'🍜', meta:'Spicy · fresh · 25 min', bg:'#70b490' },
+  { name:'Marry Me Chicken', emoji:'🥘', meta:'Creamy · savory · 30 min', bg:'#f0c870' },
+  { name:'Teriyaki Salmon Bowl', emoji:'🍱', meta:'Light · umami · 20 min', bg:'#b0d0f0' },
+  { name:'Chicken Tikka Masala', emoji:'🍛', meta:'Rich · spicy · 40 min', bg:'#f0c0a0' },
+  { name:'Vietnamese Lemongrass Beef', emoji:'🥗', meta:'Aromatic · bold · 30 min', bg:'#c0e0b0' },
+  { name:'Chipotle Chicken Tacos', emoji:'🌮', meta:'Smoky · spicy · 20 min', bg:'#f0a0a0' },
+  { name:'Garlic Butter Shrimp Pasta', emoji:'🍝', meta:'Savory · comfort · 25 min', bg:'#f0e0b0' },
+  { name:'Greek Lemon Chicken', emoji:'🍋', meta:'Bright · herby · 35 min', bg:'#f0f0b0' },
+  { name:'Spicy Miso Ramen', emoji:'🍜', meta:'Umami · warming · 30 min', bg:'#d0b0f0' },
+  { name:'Overnight Oats', emoji:'🥣', meta:'Sweet · easy · 5 min', bg:'#e0d0f0' },
+  { name:'Scrambled Egg Veggie Bowl', emoji:'🥚', meta:'Protein · quick · 10 min', bg:'#f0e8b0' },
+  { name:'Greek Yogurt Parfait', emoji:'🫙', meta:'Fresh · light · 5 min', bg:'#f0c8e0' },
+  { name:'Turkey & Avocado Wrap', emoji:'🌯', meta:'Fresh · filling · 10 min', bg:'#b0e8c0' },
+  { name:'Quinoa Power Bowl', emoji:'🥗', meta:'Balanced · nutty · 20 min', bg:'#c8e8a0' },
+  { name:'Mixed Nuts & Fruit', emoji:'🍇', meta:'Quick · energizing · 2 min', bg:'#e8c8f0' },
+  { name:'Protein Bar (homemade)', emoji:'🍫', meta:'Sweet · portable · prep', bg:'#d0c0a0' },
+];
+
+function getSessionType(dayIdx, i, indices) {
+  const pattern = state.pattern || 'batch';
+  return pattern === 'daily' ? 'fresh' : 'batch';
+}
+
+function getSessionsFromCookDays() {
+  const indices = state.cookDayIndices ? [...state.cookDayIndices].sort((a,b)=>a-b) : [];
+  if (indices.length === 0) {
+    return [{ label:'This week', covers:'covers Mon – Sat', id:'session-0', type:'batch', daysCount:6 }];
+  }
+  return indices.map((dayIdx, i) => {
+    const isLast = i === indices.length - 1;
+    const nextIdx = isLast ? 7 : indices[i+1];
+    const sessionType = getSessionType(dayIdx, i, indices);
+
+    if (sessionType === 'fresh') {
+      // Fresh night: covers only that day
+      return {
+        label: weekDays[dayIdx],
+        covers: 'cook and eat on ' + weekDaysShort[dayIdx],
+        headerLabel: 'Cook and eat on ' + weekDays[dayIdx],
+        id: 'session-' + i,
+        type: 'fresh',
+        daysCount: 1,
+        maxCookMins: 90,
+      };
+    } else {
+      // Use per-session horizon, capped at gap to next prep day
+      const horizon = Math.min(getSessionHorizon(dayIdx), getSessionMaxDays(dayIdx));
+      const coverDays = [];
+      for (let d = 0; d < horizon && dayIdx + d <= 6; d++) {
+        coverDays.push(weekDaysShort[dayIdx + d]);
+      }
+      const throughDay = coverDays[coverDays.length - 1];
+      return {
+        label: weekDays[dayIdx] + ' prep',
+        covers: 'covers ' + coverDays.join(', '),
+        headerLabel: 'Cook on ' + weekDays[dayIdx] + (coverDays.length > 1 ? ' · eat through ' + throughDay : ''),
+        id: 'session-' + i,
+        type: 'batch',
+        daysCount: horizon,
+        maxCookMins: null,
+      };
+    }
+  });
+}
+
+function shuffleArray(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+// Recipe pools by meal type
+// shelfDays: how many days it keeps in fridge. cookMins: total cook time.
+const breakfastPool = [
+  { name:'Overnight Oats', emoji:'🥣', meta:'Sweet · easy · 5 min', bg:'#e0d0f0', type:'Breakfast', shelfDays:4, cookMins:5 },
+  { name:'Scrambled Egg Veggie Bowl', emoji:'🥚', meta:'Protein · quick · 10 min', bg:'#f0e8b0', type:'Breakfast', shelfDays:1, cookMins:10 },
+  { name:'Greek Yogurt Parfait', emoji:'🫙', meta:'Fresh · light · 5 min', bg:'#f0c8e0', type:'Breakfast', shelfDays:1, cookMins:5 },
+  { name:'Avocado Toast & Eggs', emoji:'🍳', meta:'Savory · filling · 10 min', bg:'#c8e8a0', type:'Breakfast', shelfDays:1, cookMins:10 },
+  { name:'Egg Muffin Cups', emoji:'🥚', meta:'Protein · batch-friendly · 25 min', bg:'#f0d8a0', type:'Breakfast', shelfDays:5, cookMins:25 },
+  { name:'Chia Seed Pudding', emoji:'🍮', meta:'Sweet · make-ahead · 5 min', bg:'#d0e0f0', type:'Breakfast', shelfDays:5, cookMins:5 },
+];
+const lunchPool = [
+  { name:'Turkey & Avocado Wrap', emoji:'🌯', meta:'Fresh · filling · 10 min', bg:'#b0e8c0', type:'Lunch', shelfDays:1, cookMins:10 },
+  { name:'Quinoa Power Bowl', emoji:'🥗', meta:'Balanced · nutty · 20 min', bg:'#c8e8a0', type:'Lunch', shelfDays:5, cookMins:20 },
+  { name:'Spicy Tuna Poke Bowl', emoji:'🐟', meta:'Fresh · spicy · 15 min', bg:'#f0b0b0', type:'Lunch', shelfDays:1, cookMins:15 },
+  { name:'Grilled Chicken Salad', emoji:'🥗', meta:'Light · herby · 15 min', bg:'#d0f0c0', type:'Lunch', shelfDays:2, cookMins:15 },
+  { name:'Lentil Soup', emoji:'🍲', meta:'Hearty · warming · 35 min', bg:'#f0d0b0', type:'Lunch', shelfDays:5, cookMins:35 },
+  { name:'Farro & Roasted Veggie Bowl', emoji:'🥙', meta:'Earthy · filling · 30 min', bg:'#d8e8c0', type:'Lunch', shelfDays:5, cookMins:30 },
+];
+const dinnerPool = [
+  { name:'Korean BBQ Beef Bowl', emoji:'🥩', meta:'Bold · spicy · 35 min', bg:'#f0a870', type:'Dinner', shelfDays:4, cookMins:35 },
+  { name:'Spicy Thai Basil Chicken', emoji:'🍜', meta:'Spicy · fresh · 25 min', bg:'#70b490', type:'Dinner', shelfDays:3, cookMins:25 },
+  { name:'Marry Me Chicken', emoji:'🥘', meta:'Creamy · savory · 30 min', bg:'#f0c870', type:'Dinner', shelfDays:4, cookMins:30 },
+  { name:'Teriyaki Salmon Bowl', emoji:'🍱', meta:'Light · umami · 20 min', bg:'#b0d0f0', type:'Dinner', shelfDays:2, cookMins:20 },
+  { name:'Chicken Tikka Masala', emoji:'🍛', meta:'Rich · spicy · 40 min', bg:'#f0c0a0', type:'Dinner', shelfDays:5, cookMins:40 },
+  { name:'Vietnamese Lemongrass Beef', emoji:'🥗', meta:'Aromatic · bold · 30 min', bg:'#c0e0b0', type:'Dinner', shelfDays:4, cookMins:30 },
+  { name:'Chipotle Chicken Tacos', emoji:'🌮', meta:'Smoky · spicy · 20 min', bg:'#f0a0a0', type:'Dinner', shelfDays:3, cookMins:20 },
+  { name:'Garlic Butter Shrimp Pasta', emoji:'🍝', meta:'Savory · comfort · 25 min', bg:'#f0e0b0', type:'Dinner', shelfDays:2, cookMins:25 },
+  { name:'Greek Lemon Chicken', emoji:'🍋', meta:'Bright · herby · 35 min', bg:'#f0f0b0', type:'Dinner', shelfDays:4, cookMins:35 },
+  { name:'Spicy Miso Ramen', emoji:'🍜', meta:'Umami · warming · 30 min', bg:'#d0b0f0', type:'Dinner', shelfDays:3, cookMins:30 },
+  { name:'Braised Short Rib Tacos', emoji:'🌮', meta:'Rich · slow-cooked · 90 min', bg:'#e0b0a0', type:'Dinner', shelfDays:5, cookMins:90 },
+  { name:'One-Pan Roast Chicken', emoji:'🍗', meta:'Classic · crispy · 60 min', bg:'#f0d0a0', type:'Dinner', shelfDays:4, cookMins:60 },
+];
+const snackPool = [
+  { name:'Mixed Nuts & Fruit', emoji:'🍇', meta:'Quick · energizing · 2 min', bg:'#e8c8f0', type:'Snack', shelfDays:7, cookMins:2 },
+  { name:'Protein Bar (homemade)', emoji:'🍫', meta:'Sweet · portable · prep', bg:'#d0c0a0', type:'Snack', shelfDays:7, cookMins:20 },
+  { name:'Rice Cakes & Nut Butter', emoji:'🫙', meta:'Light · satisfying · 2 min', bg:'#f0e0c0', type:'Snack', shelfDays:7, cookMins:2 },
+];
+
+function getMealTypesForScope() {
+  // Scope now drives meal types for all users
+  if (state.scope === 'dinners') return ['Dinner'];
+  if (state.scope === 'dinners-lunches') return ['Lunch','Dinner'];
+  return ['Breakfast','Lunch','Dinner'];
+}
+
+function getPoolForType(type, session) {
+  const sessionType = session ? session.type : 'batch';
+  const daysCount = session ? session.daysCount : 1;
+  const maxMins = session ? session.maxCookMins : null;
+
+  let pool;
+  if (type === 'Breakfast') pool = breakfastPool;
+  else if (type === 'Lunch') pool = lunchPool;
+  else if (type === 'Dinner') pool = dinnerPool;
+  else if (type === 'Snack') pool = snackPool;
+  else pool = [];
+
+  let filtered = [...pool];
+
+  if (sessionType === 'batch') {
+    // Filter by shelf life — only show recipes that keep for the session duration
+    filtered = filtered.filter(r => r.shelfDays >= daysCount);
+  }
+  if (sessionType === 'fresh' && maxMins) {
+    // Filter by cook time for fresh nights
+    filtered = filtered.filter(r => r.cookMins <= maxMins);
+  }
+
+  // Fallback: if filtering leaves too few, relax shelf life constraint by 1 day
+  if (filtered.length < 2 && sessionType === 'batch') {
+    filtered = pool.filter(r => r.shelfDays >= Math.max(1, daysCount - 1));
+  }
+  if (filtered.length === 0) filtered = pool;
+
+  const count = type === 'Dinner' ? 4 : 3;
+  return shuffleArray(filtered).slice(0, count);
+}
+
+function buildMealSelection() {
+  const body = document.getElementById('session-blocks');
+  body.innerHTML = '';
+  state.selectedMeals = {};
+  const sessions = getSessionsFromCookDays();
+  const mealTypes = getMealTypesForScope();
+
+  // Fresh cook path: unified view grouped by meal type
+  if (state.pattern === 'daily') {
+    buildFreshMealSelection(sessions, mealTypes);
+    return;
+  }
+
+  // Batch path: session-grouped view (unchanged)
+  sessions.forEach((session, sessionColorIdx) => {
+    state.selectedMeals[session.id] = [];
+    const block = document.createElement('div');
+    block.className = 'session-block';
+    const sCol = getSessionColor(sessionColorIdx);
+    const sessionTypeBadge = '<span style="font-size:10px;font-weight:500;background:' + sCol.light + ';color:' + sCol.solid + ';border-radius:100px;padding:2px 8px;margin-left:8px">batch prep</span>';
+    block.innerHTML = `
+      <div class="session-header">
+        <div>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
+            <div class="session-title">${session.headerLabel || session.label}</div>
+            ${sessionTypeBadge}
+          </div>
+          <div style="font-size:12px;color:var(--gray);margin-top:4px">Pick meals to prep — Maui chose these for their shelf life</div>
+        </div>
+        <div class="session-count" id="count-${session.id}">0 picked</div>
+      </div>`;
+
+    mealTypes.forEach(mealType => {
+      const pool = getPoolForType(mealType, session);
+      const typeSection = document.createElement('div');
+      typeSection.style.cssText = 'margin-bottom:24px';
+
+      // Meal type label row
+      // Tag colors per meal type
+      const typeTagColors = {
+        Breakfast: {bg:'#EBF3FB',color:'#4A7BA7'},
+        Lunch: {bg:'#EAF3DE',color:'#7A9E7E'},
+        Dinner: {bg:'var(--terra-light)',color:'var(--terra)'},
+        Snack: {bg:'#FDF9EE',color:'#C9A84C'},
+      };
+      const tagStyle = typeTagColors[mealType] || {bg:'var(--border)',color:'var(--gray)'};
+
+      // Meal type label row
+      const typeLabel = document.createElement('div');
+      typeLabel.style.cssText = 'font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;padding-left:2px;color:' + tagStyle.color;
+      typeLabel.textContent = mealType;
+      typeSection.appendChild(typeLabel);
+
+      // Horizontal scroll strip with peeking card
+      const strip = document.createElement('div');
+      strip.style.cssText = [
+        'display:flex',
+        'gap:10px',
+        'overflow-x:auto',
+        'padding-bottom:8px',
+        'padding-right:24px', // expose peek of next card
+        '-webkit-overflow-scrolling:touch',
+        'scrollbar-width:none',
+        'scroll-snap-type:x mandatory',
+      ].join(';');
+
+      pool.forEach((r, idx) => {
+        const tile = document.createElement('div');
+        tile.style.cssText = [
+          'flex-shrink:0',
+          'width:200px', // wide enough to read name, narrow enough to peek next
+          'border:1.5px solid var(--border)',
+          'border-radius:16px',
+          'overflow:hidden',
+          'cursor:pointer',
+          'transition:border-color .2s,background .2s',
+          'background:var(--white)',
+          'scroll-snap-align:start',
+          'position:relative',
+        ].join(';');
+
+        tile.innerHTML =
+          // Food image area
+          '<div style="width:100%;height:100px;background:' + r.bg + ';display:flex;align-items:center;justify-content:center;font-size:44px;position:relative">' +
+            r.emoji +
+            // Checkmark badge - hidden by default
+            '<div class="tile-check" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:var(--terra);display:none;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.2)">' +
+              '<svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+            '</div>' +
+          '</div>' +
+          // Info area
+          '<div style="padding:10px 12px">' +
+            '<div style="font-size:13px;font-weight:500;color:var(--dark);line-height:1.3;margin-bottom:4px">' + r.name + '</div>' +
+            '<div style="font-size:11px;color:var(--gray)">' + r.meta + '</div>' +
+          '</div>';
+
+        tile.onclick = () => {
+          const isSelected = tile.dataset.selected === '1';
+          tile.dataset.selected = isSelected ? '0' : '1';
+          tile.style.border = isSelected ? '1.5px solid var(--border)' : '1.5px solid var(--terra)';
+          tile.style.background = isSelected ? 'var(--white)' : 'var(--terra-light)';
+          const check = tile.querySelector('.tile-check');
+          check.style.display = isSelected ? 'none' : 'flex';
+          if (!isSelected) {
+            state.selectedMeals[session.id].push({...r, mealType});
+          } else {
+            state.selectedMeals[session.id] = state.selectedMeals[session.id].filter(x => x.name !== r.name);
+          }
+          const count = state.selectedMeals[session.id].length;
+          document.getElementById('count-' + session.id).textContent = count === 0 ? '0 picked' : count + ' picked';
+          // Variety nudge for dinners
+          const existing = block.querySelector('.nudge');
+          if (existing) existing.remove();
+          const dinnerCount = state.selectedMeals[session.id].filter(x => x.mealType === 'Dinner').length;
+          if (dinnerCount === 1) {
+            const nudge = document.createElement('div');
+            nudge.className = 'nudge';
+            nudge.innerHTML = '💡 Eating this every night — want to add one more for variety?';
+            block.appendChild(nudge);
+          }
+        };
+        strip.appendChild(tile);
+      });
+
+      // Hide scrollbar on webkit
+      const styleId = 'strip-style';
+      if (!document.getElementById(styleId)) {
+        const s = document.createElement('style');
+        s.id = styleId;
+        s.textContent = '.meal-strip::-webkit-scrollbar{display:none}';
+        document.head.appendChild(s);
+      }
+      strip.classList.add('meal-strip');
+      typeSection.appendChild(strip);
+      block.appendChild(typeSection);
+    });
+    body.appendChild(block);
+  });
+}
+
+// ═══════════════════════════════════════════
+// SCREEN 12: SUMMARY
+// ═══════════════════════════════════════════
+function checkMealSelectionAndContinue() {
+  const sessions = getSessionsFromCookDays();
+  const mealTypes = getMealTypesForScope();
+  const missing = []; // { sessionLabel, mealType }
+
+  if (state.pattern === 'daily') {
+    // Fresh path: check each day has each meal type assigned
+    const sortedDays = [...state.cookDayIndices].sort((a,b) => a-b);
+    mealTypes.forEach(mealType => {
+      const assigned = (state.freshSelections[mealType] || []).map(s => s.dayIdx);
+      sortedDays.forEach(dayIdx => {
+        if (!assigned.includes(dayIdx)) {
+          missing.push({ session: weekDays[dayIdx], mealType });
+        }
+      });
+    });
+  } else {
+    sessions.forEach(session => {
+      const picked = state.selectedMeals[session.id] || [];
+      mealTypes.forEach(mealType => {
+        const hasMealType = picked.some(m => m.mealType === mealType);
+        if (!hasMealType) {
+          missing.push({ session: weekDays[state.cookDayIndices.sort((a,b)=>a-b)[sessions.indexOf(session)]] || session.label, mealType });
+        }
+      });
+    });
+  }
+
+  if (missing.length === 0) { goNext(); return; }
+
+  // Build warning overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:absolute;inset:0;background:rgba(28,28,26,.6);z-index:200;display:flex;align-items:flex-end;padding:0';
+  overlay.id = 'meal-warning-overlay';
+
+  const isFitness = state.path === 'fitness';
+
+  // Build specific missing list: "Sunday prep · Dinner", "Tuesday prep · Breakfast"
+  const missingLines = missing.map(m => '<strong>' + m.session + '</strong> — no ' + m.mealType.toLowerCase() + ' selected').join('<br>');
+  const missingCount = missing.length;
+
+  const sheet = document.createElement('div');
+  sheet.style.cssText = 'width:100%;background:var(--cream);border-radius:24px 24px 0 0;padding:24px 24px 40px;';
+
+  if (isFitness) {
+    sheet.innerHTML =
+      '<div style="font-size:16px;font-weight:600;color:var(--dark);margin-bottom:8px">Missing some meals</div>' +
+      '<div style="font-size:13px;color:var(--gray);line-height:1.7;margin-bottom:16px">' + missingLines + '</div>' +
+      '<div style="font-size:13px;color:var(--gray);line-height:1.55;margin-bottom:20px">Without these, your daily macro totals may fall short of your targets.</div>' +
+      '<div style="display:flex;flex-direction:column;gap:10px">' +
+        '<button onclick="autoFillMissing()" style="width:100%;padding:14px;background:var(--terra);color:var(--cream);border:none;border-radius:14px;font-size:15px;font-weight:500;cursor:pointer">Let Maui choose for me</button>' +
+        '<button onclick="closeWarning()" style="width:100%;padding:14px;background:transparent;color:var(--terra);border:1.5px solid var(--terra);border-radius:14px;font-size:15px;font-weight:500;cursor:pointer">Go back and pick</button>' +
+        '<button onclick="closeWarning();goNext();" style="width:100%;padding:12px;background:transparent;color:var(--gray);border:none;font-size:13px;cursor:pointer">Skip — I\'ll handle breakfast myself</button>' +
+      '</div>';
+  } else {
+    sheet.innerHTML =
+      '<div style="font-size:16px;font-weight:600;color:var(--dark);margin-bottom:8px">A few slots are empty</div>' +
+      '<div style="font-size:13px;color:var(--gray);line-height:1.7;margin-bottom:16px">' + missingLines + '</div>' +
+      '<div style="font-size:13px;color:var(--gray);line-height:1.55;margin-bottom:20px">Those days will stay flexible — totally fine.</div>' +
+      '<div style="display:flex;flex-direction:column;gap:10px">' +
+        '<button onclick="closeWarning();goNext();" style="width:100%;padding:14px;background:var(--terra);color:var(--cream);border:none;border-radius:14px;font-size:15px;font-weight:500;cursor:pointer">Looks good, continue</button>' +
+        '<button onclick="closeWarning()" style="width:100%;padding:14px;background:transparent;color:var(--terra);border:1.5px solid var(--terra);border-radius:14px;font-size:15px;font-weight:500;cursor:pointer">Go back and pick</button>' +
+      '</div>';
+  }
+
+  overlay.appendChild(sheet);
+  document.getElementById('s11').appendChild(overlay);
+}
+
+function closeWarning() { const o = document.getElementById('meal-warning-overlay'); if(o) o.remove(); }
+
+function autoFillMissing() {
+  const sessions = getSessionsFromCookDays();
+  const mealTypes = getMealTypesForScope();
+
+  if (state.pattern === 'daily') {
+    const sortedDays = [...state.cookDayIndices].sort((a,b) => a-b);
+    const freshSession = {type:'fresh', daysCount:1, maxCookMins:90};
+    mealTypes.forEach(mealType => {
+      if (!state.freshSelections[mealType]) state.freshSelections[mealType] = [];
+      const assigned = state.freshSelections[mealType].map(s => s.dayIdx);
+      const pool = getPoolForType(mealType, freshSession);
+      sortedDays.forEach((dayIdx, i) => {
+        if (!assigned.includes(dayIdx) && pool[i % pool.length]) {
+          state.freshSelections[mealType].push({ dayIdx, recipe: pool[i % pool.length], tile: null });
+        }
+      });
+    });
+    syncFreshSelections();
+  } else {
+    sessions.forEach(session => {
+      if (!state.selectedMeals[session.id]) state.selectedMeals[session.id] = [];
+      const picked = state.selectedMeals[session.id];
+      mealTypes.forEach(mealType => {
+        const hasMealType = picked.some(m => m.mealType === mealType);
+        if (!hasMealType) {
+          const pool = getPoolForType(mealType, session);
+          if (pool.length > 0) {
+            picked.push({ ...pool[0], mealType, autoFilled: true });
+          }
+        }
+      });
+    });
+  }
+
+  document.getElementById('meal-warning-overlay').remove();
+  goNext();
+}
+
+function buildSummary() {
+  const sessions = document.getElementById('summary-sessions');
+  sessions.innerHTML = '';
+  let totalMeals = 0;
+
+  if (state.pattern === 'daily') {
+    // ── Fresh cook path: group meals by day ──
+    const allMeals = state.selectedMeals['fresh-week'] || [];
+    totalMeals = allMeals.length;
+    const sortedDays = [...state.cookDayIndices].sort((a,b) => a-b);
+    let daysWithMeals = 0;
+
+    sortedDays.forEach(dayIdx => {
+      const dayMeals = allMeals.filter(m => m.dayIdx === dayIdx);
+      if (dayMeals.length === 0) return;
+      daysWithMeals++;
+
+      const block = document.createElement('div');
+      block.className = 'summary-session';
+      block.innerHTML = `
+        <div style="margin-bottom:10px">
+          <div class="summary-session-title" style="margin-bottom:2px">${weekDays[dayIdx]}</div>
+          <div style="font-size:12px;color:var(--gray)">cooking fresh that day</div>
+        </div>`;
+      dayMeals.forEach(m => {
+        const row = document.createElement('div');
+        row.className = 'summary-recipe-row';
+        row.innerHTML = `<div class="summary-recipe-emoji">${m.emoji}</div><div class="summary-recipe-name">${m.name}</div>`;
+        block.appendChild(row);
+      });
+      sessions.appendChild(block);
+    });
+
+    document.getElementById('summary-subtitle').textContent =
+      totalMeals + ' meal' + (totalMeals !== 1 ? 's' : '') + ' across ' + daysWithMeals + ' day' + (daysWithMeals !== 1 ? 's' : '');
+
+  } else {
+    // ── Batch path: group by prep session ──
+    const sessionCount = Object.keys(state.selectedMeals).length;
+
+    for (const [sessionId, meals] of Object.entries(state.selectedMeals)) {
+      if (meals.length === 0) continue;
+      totalMeals += meals.length;
+      const cookDayIdx = parseInt(sessionId.split('-')[1]);
+      const cookDayNames2 = state.cookDayIndices ? [...state.cookDayIndices].sort((a,b)=>a-b) : [];
+      const sessionDayName = cookDayNames2[cookDayIdx] !== undefined ? weekDays[cookDayNames2[cookDayIdx]] : 'Session';
+      const sessionCoverIdx = cookDayNames2[cookDayIdx];
+      const isLastSession = cookDayIdx === cookDayNames2.length - 1;
+      const nextCoverIdx = isLastSession ? 7 : cookDayNames2[cookDayIdx+1];
+      const gapDays2 = nextCoverIdx - sessionCoverIdx;
+      const sessionCovers = [];
+      for (let d = 0; d < gapDays2 && sessionCoverIdx + d <= 6; d++) {
+        sessionCovers.push(weekDaysShort[sessionCoverIdx + d]);
+      }
+      const coversStr = sessionCovers.length > 0 ? sessionCovers.join(', ') : '';
+
+      const block = document.createElement('div');
+      block.className = 'summary-session';
+      block.innerHTML = `
+        <div style="margin-bottom:10px">
+          <div class="summary-session-title" style="margin-bottom:2px">Cook on ${sessionDayName}</div>
+          ${coversStr ? '<div style="font-size:12px;color:var(--gray)">feeds you through ' + coversStr + '</div>' : ''}
+        </div>`;
+      meals.forEach(m => {
+        const row = document.createElement('div');
+        row.className = 'summary-recipe-row';
+        row.innerHTML = `<div class="summary-recipe-emoji">${m.emoji}</div><div class="summary-recipe-name">${m.name}</div>`;
+        block.appendChild(row);
+      });
+      sessions.appendChild(block);
+    }
+
+    document.getElementById('summary-subtitle').textContent =
+      totalMeals + ' meal' + (totalMeals !== 1 ? 's' : '') + ' across ' + sessionCount + ' cook session' + (sessionCount !== 1 ? 's' : '');
+  }
+
+  // Macro summary for fitness path
+  const macroBlock = document.getElementById('macro-summary-block');
+  macroBlock.innerHTML = '';
+  if (state.goal && state.goal !== 'eat-better' && state.macros.pro) {
+    macroBlock.innerHTML = `
+      <div class="macro-summary-bar">
+        <div style="font-size:13px;font-weight:500;color:var(--dark);margin-bottom:8px">Daily targets</div>
+        <div class="macro-summary-row"><span class="macro-summary-name">Calories</span><span class="macro-summary-val">${state.macros.cal.toLocaleString()} kcal</span></div>
+        <div class="macro-summary-row"><span class="macro-summary-name">Protein</span><span class="macro-summary-val">${state.macros.pro}g</span></div>
+        <div class="macro-summary-row"><span class="macro-summary-name">Carbs</span><span class="macro-summary-val">${state.macros.carb}g</span></div>
+        <div class="macro-summary-row"><span class="macro-summary-name">Fat</span><span class="macro-summary-val">${state.macros.fat}g</span></div>
+      </div>`;
+  }
+}
+
+// ═══════════════════════════════════════════
+// SCREEN 14: LOADING + AI CALL
+// ═══════════════════════════════════════════
+function runLoadingSequence() {
+  const steps = ['ls1','ls2','ls3','ls4'];
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i > 0) {
+      document.getElementById(steps[i-1]).classList.remove('active');
+      document.getElementById(steps[i-1]).classList.add('done');
+    }
+    if (i < steps.length) {
+      document.getElementById(steps[i]).classList.add('active');
+      i++;
+    } else {
+      clearInterval(interval);
+    }
+  }, 1200);
+
+  generateAIPlan().then(plan => {
+    state.aiPlan = plan;
+    writeToLocalStorage();
+    setTimeout(() => navigateTo('s15'), 5200);
+  }).catch(() => {
+    state.aiPlan = getFallbackPlan();
+    writeToLocalStorage();
+    setTimeout(() => navigateTo('s15'), 5200);
+  });
+}
+
+
+// ─── LOCALSTORAGE HANDOFF TO APP PROTOTYPE ───
+function writeToLocalStorage() {
+  try {
+    // User profile
+    const maui_user = {
+      goal: state.goal || 'eat-better',
+      goalLabel: {
+        'lose-fat': 'Improve my body composition',
+        'body-recomp': 'Improve my body composition',
+        'build-muscle': 'Build muscle',
+        'eat-better': 'Just eat better',
+      }[state.goal] || 'Just eat better',
+      macros: state.macros,
+      cuisines: state.cuisines,
+      spice: state.spice,
+      allergies: state.allergies,
+      scope: state.scope || 'dinners',
+      tasteText: state.tasteText || '',
+    };
+    localStorage.setItem('maui_user', JSON.stringify(maui_user));
+
+    // Cooking schedule
+    const maui_schedule = {
+      pattern: state.pattern || 'batch',
+      cookDayIndices: [...(state.cookDayIndices || [])].sort((a,b)=>a-b),
+      sessionHorizons: state.sessionHorizons || {},
+    };
+    localStorage.setItem('maui_schedule', JSON.stringify(maui_schedule));
+
+    // Generated plan
+    const maui_plan = {
+      sessions: state.aiPlan ? state.aiPlan.sessions : [],
+      grocery_highlights: state.aiPlan ? (state.aiPlan.grocery_highlights || []) : [],
+      generated_at: new Date().toISOString(),
+    };
+    localStorage.setItem('maui_plan', JSON.stringify(maui_plan));
+
+    console.log('Maui: plan written to localStorage ✓');
+  } catch(e) {
+    console.warn('Maui: localStorage write failed', e);
+  }
+}
+
+async function generateAIPlan() {
+  const allMeals = Object.values(state.selectedMeals).flat();
+  const mealNames = allMeals.map(m => m.name).join(', ');
+  const cuisineStr = state.cuisines.join(', ');
+  const allergyStr = state.allergies.length > 0 ? state.allergies.filter(a => a !== 'none').join(', ') : 'none';
+
+  // Build session context with shelf life constraints
+  const planSessions = getSessionsFromCookDays();
+  const sessionLines = planSessions.map(s => {
+    if (s.type === 'fresh') {
+      return '- ' + (s.headerLabel || s.label) + ': FRESH COOK NIGHT — cook and eat same night. Any recipe up to 90 min. No shelf life constraint needed.';
+    } else {
+      return '- ' + (s.headerLabel || s.label) + ': BATCH SESSION covering ' + s.daysCount + ' day(s). Only suggest recipes that keep well in the fridge for ' + s.daysCount + '+ days. Good options: braises, grain bowls, roasted proteins, curries, stews, marinated meats. Avoid: scrambled eggs, fresh green salads, avocado dishes, delicate fish, anything that gets soggy or oxidizes.';
+    }
+  }).join('\n');
+
+  const macroLine = (state.goal && state.goal !== 'eat-better')
+    ? 'Goal: ' + (state.goal || 'body composition') + '\nPlan targets: ' + state.macros.cal + ' cal, ' + state.macros.pro + 'g protein'
+    : '';
+  const scopeLine = 'Meal scope: ' + (state.scope || 'dinners');
+  const macroInstructions = (state.goal === 'eat-better') ? 'Do not include protein or calorie fields.' : 'Include realistic protein and calorie values per meal.';
+  const mealTypes = state.path === 'fitness' ? 'breakfast, lunch, dinner, snacks' : state.scope;
+
+  const prompt = 'You are Maui, a flavor-first meal planning AI with warm cat energy — a knowledgeable food-obsessed friend, not a coach or tracker. Generate a personalized weekly meal plan.\n\n'
+    + 'Goal: ' + (state.goal || 'eat better') + '\n'
+    + (macroLine ? macroLine + '\n' : '')
+    + 'Cuisines they love: ' + cuisineStr + '\n'
+    + 'Spice preference: ' + state.spice + '\n'
+    + 'Allergies: ' + allergyStr + '\n'
+    + 'Meals they selected: ' + (mealNames || 'a variety of flavorful dishes') + '\n'
+    + 'Cooking pattern: ' + state.pattern + '\n'
+    + scopeLine + '\n\n'
+    + 'COOK SESSIONS — follow shelf life rules strictly:\n'
+    + sessionLines + '\n\n'
+    + 'Generate a weekly meal plan as JSON with this exact structure:\n'
+    + '{"sessions":[{"day":"Sunday","covers":"Sun-Tue","session_type":"batch","meals":[{"type":"Dinner","name":"Recipe Name","emoji":"🍜","description":"2-3 word flavor description","protein":35,"calories":520}]}],"grocery_highlights":["ingredient 1","ingredient 2","ingredient 3","ingredient 4","ingredient 5"]}\n\n'
+    + macroInstructions + '\n'
+    + 'Include only meal types appropriate for: ' + mealTypes + '.\n'
+    + 'For batch sessions: only 3+ day shelf life recipes. For fresh nights: any recipe up to 90 min.\n'
+    + 'Make recipe names exciting and specific. Match cuisine preferences. Respond ONLY with valid JSON.';
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const data = await res.json();
+  const text = data.content[0].text;
+  const clean = text.replace(/```json|```/g,'').trim();
+  return JSON.parse(clean);
+}
+
+function getFallbackPlan() {
+  return {
+    sessions: [
+      { day:'Sunday', covers:'Mon–Wed', meals: [
+        { type:'Dinner', name:'Korean BBQ Beef Bowl', emoji:'🥩', description:'Bold · smoky', protein:42, calories:580 },
+        { type:'Dinner', name:'Spicy Thai Basil Chicken', emoji:'🍜', description:'Fiery · fresh', protein:38, calories:510 },
+        { type:'Lunch', name:'Quinoa Power Bowl', emoji:'🥗', description:'Nutty · bright', protein:28, calories:420 },
+      ]},
+      { day:'Wednesday', covers:'Thu–Sat', meals: [
+        { type:'Dinner', name:'Chicken Tikka Masala', emoji:'🍛', description:'Rich · warming', protein:40, calories:550 },
+        { type:'Dinner', name:'Chipotle Chicken Tacos', emoji:'🌮', description:'Smoky · spicy', protein:35, calories:490 },
+        { type:'Lunch', name:'Turkey & Avocado Wrap', emoji:'🌯', description:'Fresh · filling', protein:32, calories:440 },
+      ]}
+    ],
+    grocery_highlights: ['chicken thighs','gochujang','Thai basil','coconut milk','bell peppers']
+  };
+}
+
+// ═══════════════════════════════════════════
+// SCREEN 15: DASHBOARD RENDER
+// ═══════════════════════════════════════════
+function renderDashboard() {
+  const plan = state.aiPlan;
+  if (!plan) return;
+  const output = document.getElementById('ai-plan-output');
+  output.innerHTML = '';
+
+  plan.sessions.forEach(session => {
+    const card = document.createElement('div');
+    card.className = 'plan-card';
+    card.innerHTML = `
+      <div class="plan-card-header">
+        <div class="plan-card-day">${session.day} prep</div>
+        <div class="plan-card-session">covers ${session.covers}</div>
+      </div>`;
+    session.meals.forEach(meal => {
+      const row = document.createElement('div');
+      row.className = 'plan-meal-row';
+      row.innerHTML = `
+        <div class="plan-meal-emoji">${meal.emoji}</div>
+        <div class="plan-meal-info">
+          <div class="plan-meal-name">${meal.name}</div>
+          <div class="plan-meal-macro">${meal.description}${state.goal && state.goal !== 'eat-better' && meal.protein ? ' · ' + meal.protein + 'g protein · ' + meal.calories + ' cal' : ''}</div>
+        </div>
+        <div class="plan-meal-type">${meal.type}</div>`;
+      card.appendChild(row);
+    });
+    output.appendChild(card);
+  });
+
+  if (plan.grocery_highlights) {
+    const g = document.createElement('div');
+    g.style.cssText = 'background:var(--white);border:1px solid var(--border);border-radius:16px;padding:16px;margin-top:10px';
+    g.innerHTML = `<div style="font-size:13px;font-weight:500;color:var(--terra);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Grocery highlights</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${plan.grocery_highlights.map(i=>`<span style="background:var(--cream);border-radius:100px;padding:6px 12px;font-size:13px;color:var(--dark)">${i}</span>`).join('')}</div>`;
+    output.appendChild(g);
+  }
+}
+
+// Watch for dashboard becoming active
+const dashObserver = new MutationObserver(() => {
+  if (document.getElementById('s15').classList.contains('active') && state.aiPlan) {
+    renderDashboard();
+    dashObserver.disconnect();
+  }
+});
+dashObserver.observe(document.getElementById('s15'), { attributes: true, attributeFilter: ['class'] });
+
+// onScreenEnter trigger for s15
+const origOnScreenEnter = onScreenEnter;
+</script>
+</body>
+</html>

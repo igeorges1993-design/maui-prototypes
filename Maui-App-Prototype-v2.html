@@ -1,0 +1,3159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Maui — App Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET + ROOT ─── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --orange:#E8652A;--terra:#C4714A;--terra-light:#FDF6F1;--terra-mid:#E8C4A8;
+  --dark:#1E1208;--mid:#4A2E1A;--cream:#FAF6F0;--cream-mid:#F0E8DC;--border:#E2D4C2;
+  --gray:#8A7A6A;--white:#FAFAF7;
+  --green:#2A5A18;--green-light:#EAF3DE;
+  --blue:#185FA5;--blue-light:#E6F1FB;
+  --amber:#C9A84C;--amber-light:#FDF9EE;
+  --red:#A32D2D;--red-light:#FCEBEB;
+  --shadow:0 2px 16px rgba(30,18,8,.1);
+  --shadow-lg:0 8px 32px rgba(30,18,8,.15);
+}
+
+body{
+  font-family:'DM Sans',sans-serif;
+  background:#2A2A28;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-start;min-height:100vh;
+  padding:32px 16px 80px;
+  gap:24px;
+}
+
+/* ─── DEVICE SHELL ─── */
+.device{
+  width:390px;height:844px;
+  background:var(--cream);
+  border-radius:54px;
+  box-shadow:0 0 0 10px #1A1A18,0 0 0 12px #333,var(--shadow-lg);
+  overflow:hidden;position:relative;flex-shrink:0;
+}
+.device-notch{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:120px;height:34px;background:#1A1A18;border-radius:0 0 20px 20px;z-index:100;
+}
+.status-bar{
+  position:absolute;top:0;left:0;right:0;height:54px;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 24px 8px;z-index:99;font-size:13px;font-weight:600;
+  color:var(--dark);background:var(--cream);
+}
+.status-bar.dark{background:transparent;color:var(--cream)}
+.status-icons{display:flex;align-items:center;gap:6px;font-size:11px}
+.home-indicator{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  width:134px;height:5px;background:var(--dark);border-radius:3px;opacity:.2;
+}
+
+/* ─── SCREENS ─── */
+.screen{
+  position:absolute;inset:0;
+  background:var(--cream);
+  overflow:hidden;
+  display:none;
+  flex-direction:column;
+}
+.screen.active{display:flex}
+
+/* Screen transitions */
+.screen.slide-in{animation:slideIn .28s cubic-bezier(.4,0,.2,1) forwards}
+.screen.slide-out{animation:slideOut .28s cubic-bezier(.4,0,.2,1) forwards}
+.screen.slide-in-left{animation:slideInLeft .28s cubic-bezier(.4,0,.2,1) forwards}
+.screen.slide-out-right{animation:slideOutRight .28s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes slideOut{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+@keyframes slideInLeft{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+@keyframes slideOutRight{from{transform:translateX(0)}to{transform:translateX(100%)}}
+
+/* ─── SCROLLABLE BODY ─── */
+.screen-scroll{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  padding-top:54px;padding-bottom:90px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.screen-scroll::-webkit-scrollbar{display:none}
+
+/* ─── BOTTOM NAV ─── */
+.bottom-nav{
+  position:absolute;bottom:0;left:0;right:0;
+  height:83px;
+  background:var(--cream);
+  border-top:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-around;
+  padding-top:10px;
+  z-index:50;
+}
+.nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:4px 16px;cursor:pointer;
+  font-size:10px;font-weight:500;color:var(--gray);
+  transition:color .15s;
+}
+.nav-item.active{color:var(--terra)}
+.nav-icon{font-size:22px;line-height:1}
+
+/* ─── FAB ─── */
+.fab{
+  position:absolute;bottom:96px;right:20px;
+  width:54px;height:54px;border-radius:50%;
+  background:var(--terra);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;
+  box-shadow:0 4px 16px rgba(196,113,74,.4);
+  cursor:pointer;z-index:49;
+  transition:transform .15s,box-shadow .15s;
+}
+.fab:active{transform:scale(.94);box-shadow:0 2px 8px rgba(196,113,74,.3)}
+
+/* ─── TOP BAR ─── */
+.top-bar{
+  position:absolute;top:54px;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 20px;z-index:40;
+  background:var(--cream);
+}
+.top-bar-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--dark)}
+.top-bar-icons{display:flex;gap:12px;align-items:center}
+.icon-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--cream-mid);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;cursor:pointer;
+  transition:background .15s;
+}
+.icon-btn:active{background:var(--border)}
+
+/* Back button */
+.back-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--cream-mid);border:none;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:18px;color:var(--dark);
+  transition:background .15s;
+}
+.back-btn:active{background:var(--border)}
+
+/* ─── CARDS ─── */
+.card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:20px;padding:16px;
+}
+.card-terra{background:var(--terra-light);border:1px solid var(--terra-mid);border-radius:20px;padding:16px}
+.card-dark{background:var(--dark);border-radius:20px;padding:16px}
+
+/* ─── PILLS / TAGS ─── */
+.pill{display:inline-block;font-size:11px;font-weight:500;padding:3px 10px;border-radius:100px}
+.pill-terra{background:var(--terra-light);color:var(--terra)}
+.pill-green{background:var(--green-light);color:var(--green)}
+.pill-amber{background:var(--amber-light);color:var(--amber)}
+.pill-blue{background:var(--blue-light);color:var(--blue)}
+.pill-gray{background:var(--cream-mid);color:var(--gray)}
+
+/* ─── SECTION LABEL ─── */
+.sec-label{
+  font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.7px;color:var(--gray);
+  margin-bottom:10px;
+}
+
+/* ─── MEAL TILES ─── */
+.meal-tile{
+  background:var(--white);border:1px solid var(--border);border-radius:16px;
+  overflow:hidden;cursor:pointer;
+  transition:transform .15s,box-shadow .15s;
+  display:flex;flex-direction:column;
+}
+.meal-tile:active{transform:scale(.97)}
+.meal-tile-img{
+  height:80px;display:flex;align-items:center;justify-content:center;
+  font-size:36px;
+}
+.meal-tile-body{padding:10px 12px}
+.meal-tile-name{font-size:13px;font-weight:500;color:var(--dark);line-height:1.3;margin-bottom:2px}
+.meal-tile-meta{font-size:11px;color:var(--gray)}
+
+/* ─── TODAY MEAL CARD ─── */
+.today-meal{
+  display:flex;align-items:center;gap:12px;
+  background:var(--white);border:1px solid var(--border);border-radius:16px;
+  padding:12px 14px;cursor:pointer;
+  transition:background .15s;
+  margin-bottom:8px;
+}
+.today-meal:active{background:var(--cream-mid)}
+.today-meal-emoji{font-size:28px;flex-shrink:0}
+.today-meal-info{flex:1}
+.today-meal-type{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--gray);margin-bottom:2px}
+.today-meal-name{font-size:14px;font-weight:500;color:var(--dark);line-height:1.3}
+.today-meal-meta{font-size:11px;color:var(--gray);margin-top:2px}
+.today-meal-arrow{color:var(--gray);font-size:16px;flex-shrink:0}
+
+/* ─── WEEK STRIP ─── */
+.week-strip{
+  display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;
+  scrollbar-width:none;
+}
+.week-strip::-webkit-scrollbar{display:none}
+.day-pill{
+  flex-shrink:0;width:44px;display:flex;flex-direction:column;
+  align-items:center;gap:3px;cursor:pointer;
+}
+.day-letter{font-size:10px;font-weight:500;color:var(--gray);text-transform:uppercase}
+.day-num{
+  width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:500;color:var(--dark);
+  transition:background .15s;
+}
+.day-pill.today .day-num{background:var(--dark);color:var(--cream)}
+.day-pill.prep-day .day-letter{color:var(--terra)}
+.day-dot{width:5px;height:5px;border-radius:50%;background:transparent}
+.day-pill.prep-day .day-dot{background:var(--terra)}
+.day-pill.has-meals .day-dot{background:var(--border)}
+
+/* ─── SESSION BLOCK ─── */
+.session-block{
+  border-radius:20px;overflow:hidden;
+  border:1px solid var(--border);
+  margin-bottom:16px;
+}
+.session-header{
+  padding:14px 16px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.session-day{font-size:15px;font-weight:600;color:var(--dark)}
+.session-covers{font-size:11px;color:var(--gray);margin-top:2px}
+.session-recipes{padding:0 12px 12px;display:flex;flex-direction:column;gap:6px}
+
+/* Recipe row in session */
+.recipe-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--white);border-radius:12px;padding:10px 12px;
+  cursor:pointer;transition:background .15s;
+  position:relative;overflow:hidden;
+}
+.recipe-row:active{background:var(--cream-mid)}
+.recipe-emoji{font-size:22px;flex-shrink:0}
+.recipe-info{flex:1}
+.recipe-name{font-size:13px;font-weight:500;color:var(--dark)}
+.recipe-meta{font-size:11px;color:var(--gray);margin-top:1px}
+.recipe-type{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--gray);margin-bottom:2px}
+.recipe-arrow{color:var(--border);font-size:14px}
+
+/* Swipe hint */
+.recipe-row::after{
+  content:'Swap →';
+  position:absolute;right:-80px;top:50%;transform:translateY(-50%);
+  font-size:12px;font-weight:500;color:var(--terra);
+  background:var(--terra-light);padding:4px 10px;border-radius:8px;
+  transition:right .25s;
+}
+
+/* ─── PREP DAY CALLOUT ─── */
+.prep-callout{
+  background:var(--dark);border-radius:20px;padding:18px 18px 16px;
+  margin-bottom:20px;position:relative;overflow:hidden;
+}
+.prep-callout::before{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:140px;height:140px;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,101,42,.3) 0%,transparent 70%);
+}
+.prep-callout-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--orange);margin-bottom:6px}
+.prep-callout-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--cream);line-height:1.2;margin-bottom:4px}
+.prep-callout-sub{font-size:13px;color:rgba(250,246,240,.6);margin-bottom:14px}
+.prep-callout-meta{display:flex;gap:12px;margin-bottom:14px}
+.prep-meta-item{display:flex;align-items:center;gap:5px;font-size:12px;color:rgba(250,246,240,.7)}
+.prep-cta{
+  background:var(--terra);color:var(--cream);
+  border:none;border-radius:12px;padding:11px 18px;
+  font-size:14px;font-weight:500;cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  transition:opacity .15s;
+}
+.prep-cta:active{opacity:.85}
+.prep-dismiss{
+  position:absolute;top:14px;right:14px;
+  background:rgba(250,246,240,.1);border:none;border-radius:50%;
+  width:28px;height:28px;color:rgba(250,246,240,.5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;cursor:pointer;
+}
+
+/* ─── STREAK BADGE ─── */
+.streak-badge{
+  display:flex;align-items:center;gap:6px;
+  background:var(--amber-light);border:1px solid rgba(201,168,76,.3);
+  border-radius:100px;padding:4px 10px;
+  font-size:12px;font-weight:500;color:var(--mid);
+}
+
+/* ─── INSIGHT CARD ─── */
+.insight-card{
+  background:linear-gradient(135deg,var(--terra-light) 0%,#FFF8F4 100%);
+  border:1px solid var(--terra-mid);border-radius:16px;
+  padding:14px 16px;margin-bottom:16px;
+  display:flex;gap:12px;align-items:flex-start;
+}
+.insight-icon{font-size:22px;flex-shrink:0;margin-top:1px}
+.insight-title{font-size:13px;font-weight:500;color:var(--dark);margin-bottom:2px}
+.insight-text{font-size:12px;color:var(--gray);line-height:1.55}
+
+/* ─── RECIPE DETAIL ─── */
+.recipe-hero{
+  height:220px;display:flex;align-items:center;justify-content:center;
+  font-size:80px;position:relative;
+}
+.recipe-hero-back{
+  position:absolute;top:60px;left:16px;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(250,246,240,.9);border:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;cursor:pointer;
+}
+.recipe-actions{display:flex;gap:8px}
+.recipe-action-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:var(--white);border:1px solid var(--border);border-radius:12px;
+  padding:10px 6px;cursor:pointer;font-size:11px;color:var(--gray);
+  transition:background .15s;
+}
+.recipe-action-btn:active{background:var(--cream-mid)}
+.recipe-action-btn .icon{font-size:18px}
+
+/* Recipe tabs */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px}
+.tab{
+  flex:1;text-align:center;padding:10px 6px;
+  font-size:13px;font-weight:500;color:var(--gray);
+  cursor:pointer;border-bottom:2px solid transparent;
+  transition:color .15s,border-color .15s;
+}
+.tab.active{color:var(--terra);border-bottom-color:var(--terra)}
+
+/* Ingredients */
+.ingredient-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:9px 0;border-bottom:1px solid var(--border);
+  font-size:13px;color:var(--dark);
+}
+.ingredient-row:last-child{border-bottom:none}
+.ingredient-qty{color:var(--gray);font-size:12px}
+
+/* Steps */
+.step-row{
+  display:flex;gap:12px;padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.step-row:last-child{border-bottom:none}
+.step-num{
+  width:24px;height:24px;border-radius:50%;
+  background:var(--terra);color:var(--cream);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;flex-shrink:0;margin-top:1px;
+}
+.step-text{font-size:13px;color:var(--dark);line-height:1.6;flex:1}
+
+/* Nutrition grid */
+.nutrition-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.nutrition-cell{
+  background:var(--white);border:1px solid var(--border);border-radius:14px;
+  padding:14px;text-align:center;
+}
+.nutrition-val{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:var(--dark)}
+.nutrition-unit{font-size:11px;color:var(--gray);margin-top:1px}
+.nutrition-label{font-size:12px;font-weight:500;color:var(--gray);margin-top:6px}
+
+/* Modify FAB */
+.modify-fab{
+  position:absolute;bottom:96px;left:50%;transform:translateX(-50%);
+  background:var(--dark);color:var(--cream);
+  border:none;border-radius:100px;padding:13px 28px;
+  font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;
+  display:flex;align-items:center;gap:8px;cursor:pointer;
+  box-shadow:0 4px 16px rgba(30,18,8,.25);
+  transition:opacity .15s;z-index:49;
+  white-space:nowrap;
+}
+.modify-fab:active{opacity:.85}
+
+/* ─── MAUI CHAT ─── */
+.chat-header{
+  position:absolute;top:54px;left:0;right:0;
+  padding:14px 16px 12px;
+  background:var(--cream);
+  border-bottom:1px solid var(--border);
+  z-index:40;display:flex;align-items:center;gap:10px;
+}
+.chat-maui-avatar{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--terra);display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+}
+.chat-maui-name{font-size:15px;font-weight:600;color:var(--dark)}
+.chat-maui-status{font-size:11px;color:var(--green)}
+
+.chat-scroll{
+  flex:1;overflow-y:auto;padding:120px 16px 100px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.chat-scroll::-webkit-scrollbar{display:none}
+
+.chat-row{display:flex;gap:8px;margin-bottom:12px;align-items:flex-end}
+.chat-row.user-row{flex-direction:row-reverse}
+.chat-avatar-sm{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--terra);display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;
+}
+.chat-bubble{
+  max-width:75%;padding:10px 14px;border-radius:18px;
+  font-size:13px;line-height:1.5;
+}
+.chat-bubble.maui{
+  background:var(--white);border:1px solid var(--border);
+  color:var(--dark);border-bottom-left-radius:6px;
+}
+.chat-bubble.user{
+  background:var(--dark);color:var(--cream);
+  border-bottom-right-radius:6px;
+}
+
+/* Suggestion pills */
+.suggestion-pills{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 12px}
+.suggestion-pill{
+  background:var(--white);border:1px solid var(--border);border-radius:100px;
+  padding:8px 14px;font-size:12px;font-weight:500;color:var(--dark);
+  cursor:pointer;white-space:nowrap;
+  transition:background .15s,border-color .15s;
+}
+.suggestion-pill:active{background:var(--terra-light);border-color:var(--terra)}
+
+.chat-input-wrap{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:8px 12px 24px;
+  background:var(--cream);border-top:1px solid var(--border);
+  display:flex;gap:8px;align-items:center;z-index:50;
+}
+.chat-input{
+  flex:1;background:var(--white);border:1px solid var(--border);
+  border-radius:100px;padding:10px 16px;
+  font-size:13px;font-family:'DM Sans',sans-serif;color:var(--dark);
+  outline:none;resize:none;
+}
+.chat-send-btn{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--terra);border:none;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;
+  transition:opacity .15s;
+}
+.chat-send-btn:active{opacity:.85}
+
+/* ─── COOK MODE ─── */
+.cook-session-card{
+  background:var(--dark);border-radius:24px;margin:0 16px 16px;
+  padding:20px;position:relative;overflow:hidden;
+}
+.cook-session-card::before{
+  content:'';position:absolute;bottom:-60px;right:-60px;
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,101,42,.2) 0%,transparent 70%);
+}
+.cook-recipe-item{
+  display:flex;align-items:center;gap:12px;
+  background:rgba(250,246,240,.08);border-radius:14px;
+  padding:12px 14px;cursor:pointer;
+  transition:background .15s;
+}
+.cook-recipe-item:active{background:rgba(250,246,240,.15)}
+.cook-order-num{
+  width:24px;height:24px;border-radius:50%;
+  background:var(--terra);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--cream);flex-shrink:0;
+}
+.cook-recipe-name{font-size:14px;font-weight:500;color:var(--cream)}
+.cook-recipe-time{font-size:12px;color:rgba(250,246,240,.5);margin-top:2px}
+.cook-check{
+  width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(250,246,240,.25);
+  display:flex;align-items:center;justify-content:center;
+  margin-left:auto;flex-shrink:0;cursor:pointer;
+}
+.cook-check.done{background:var(--green);border-color:var(--green)}
+
+/* ─── STREAKS SCREEN ─── */
+.streak-stat{
+  display:flex;flex-direction:column;align-items:center;
+  background:var(--white);border:1px solid var(--border);border-radius:20px;padding:20px;
+}
+.streak-stat-val{font-family:'Playfair Display',serif;font-size:40px;font-weight:700;color:var(--dark)}
+.streak-stat-label{font-size:12px;color:var(--gray);margin-top:4px;text-align:center}
+
+/* Rating stars */
+.stars{display:flex;gap:4px}
+.star{font-size:22px;cursor:pointer;color:var(--border);transition:color .1s}
+.star.active{color:var(--amber)}
+
+/* Reaction pills */
+.reactions{display:flex;gap:8px;flex-wrap:wrap}
+.reaction{
+  background:var(--white);border:1px solid var(--border);border-radius:100px;
+  padding:8px 14px;font-size:13px;cursor:pointer;
+  display:flex;align-items:center;gap:6px;
+  transition:background .15s,border-color .15s;
+}
+.reaction.selected{background:var(--terra-light);border-color:var(--terra)}
+
+/* ─── SPOTLIGHT ─── */
+.spotlight-target {
+  position: relative;
+  z-index: 301 !important;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(30,18,8,.35) !important;
+  pointer-events: all !important;
+}
+
+/* ─── OUTER CONTROLS ─── */
+.outer{width:390px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.ctrl-btn{
+  background:rgba(250,246,240,.1);border:1px solid rgba(250,246,240,.15);
+  color:rgba(250,246,240,.7);border-radius:100px;padding:7px 16px;
+  font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:background .15s;
+}
+.ctrl-btn:hover{background:rgba(250,246,240,.18)}
+.ctrl-btn.active{background:rgba(232,101,42,.25);border-color:rgba(232,101,42,.4);color:#E8652A}
+
+.label{font-size:11px;color:rgba(250,246,240,.35);text-align:center;width:100%;font-family:'DM Mono',monospace;letter-spacing:.5px;margin-top:4px}
+</style>
+</head>
+<body>
+
+<!-- DEVICE -->
+<div class="device">
+  <div class="device-notch"></div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar" id="status-bar">
+    <span>9:41</span>
+    <div class="status-icons">
+      <span>●●●</span>
+      <span>WiFi</span>
+      <span>🔋</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       HOME — DEFAULT (weekday, no prep)
+  ═══════════════════════════════════════ -->
+  <div class="screen active" id="screen-home">
+    <div class="screen-scroll">
+      <div style="padding:0 20px">
+
+        <!-- Top bar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-top:8px">
+          <div>
+            <div style="font-size:13px;color:var(--gray);margin-bottom:2px">Good morning</div>
+            <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:600;color:var(--dark)">Jordan 👋</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div class="icon-btn" onclick="goTo('screen-streaks')" title="Your streak">🔥</div>
+            <div class="icon-btn" onclick="goTo('screen-settings')" title="Settings">⚙️</div>
+          </div>
+        </div>
+
+        <!-- Streak badge -->
+        <div id="streak-badge-wrap" style="margin-bottom:20px;cursor:pointer" onclick="goTo('screen-streaks')">
+          <div class="streak-badge" style="display:inline-flex">
+            <span>🔥</span>
+            <span>Week 4 with Maui</span>
+            <span style="color:var(--terra);font-weight:600">· 11/14 sessions</span>
+          </div>
+        </div>
+
+        <!-- Week strip -->
+        <div class="sec-label">This week</div>
+        <div class="week-strip" style="margin-bottom:20px" id="week-strip">
+          <!-- built by JS -->
+        </div>
+
+        <!-- Dynamic day callout -->
+        <div id="day-callout" style="margin-bottom:16px"></div>
+
+        <!-- Today's meals -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="sec-label" style="margin-bottom:0" id="meals-day-label">Today's meals</div>
+        </div>
+        <div id="today-meals-container" style="margin-bottom:20px"></div>
+
+        <!-- Weekly insight -->
+        <div class="insight-card" onclick="goTo('screen-streaks')" style="cursor:pointer;transition:opacity .15s" onmousedown="this.style.opacity='.8'" onmouseup="this.style.opacity='1'">
+          <div class="insight-icon">💪</div>
+          <div>
+            <div class="insight-title">This week's plan</div>
+            <div class="insight-text">Maui's hitting around 145g protein per day for you — right on track for your body composition goal. Tap to see more.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <!-- Bottom nav -->
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="switchTab('home')"><div class="nav-icon">🏠</div>Home</div>
+      <div class="nav-item" onclick="switchTab('plan')"><div class="nav-icon">📅</div>Plan</div>
+      <div class="nav-item" onclick="switchTab('groceries')"><div class="nav-icon">🛒</div>Groceries</div>
+      <div class="nav-item" onclick="switchTab('recipes')"><div class="nav-icon">📖</div>Recipes</div>
+    </div>
+    <!-- FAB -->
+    <div id="fab-ask-maui" class="fab" onclick="goTo('screen-chat')" style="width:auto;border-radius:100px;padding:0 16px 0 12px;gap:6px;flex-direction:row;">
+      <span style="font-size:20px">🐱</span>
+      <span style="font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap">Ask Maui</span>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       HOME — PREP DAY CALLOUT
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-home-prep">
+    <div class="screen-scroll">
+      <div style="padding:0 20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-top:8px">
+          <div>
+            <div style="font-size:13px;color:var(--gray);margin-bottom:2px">Good morning</div>
+            <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:600;color:var(--dark)">Jordan 👋</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div class="icon-btn" onclick="goTo('screen-streaks')">🔥</div>
+            <div class="icon-btn" onclick="goTo('screen-settings')">⚙️</div>
+          </div>
+        </div>
+
+        <!-- Prep day callout -->
+        <div class="prep-callout">
+          <button class="prep-dismiss" onclick="this.closest('.prep-callout').style.display='none'">✕</button>
+          <div class="prep-callout-label">Today's your prep day</div>
+          <div class="prep-callout-title">Sunday session ready 🍳</div>
+          <div class="prep-callout-sub">3 recipes · covers Sun through Wed</div>
+          <div class="prep-callout-meta">
+            <div class="prep-meta-item">⏱ ~2 hrs total</div>
+            <div class="prep-meta-item">🍽 3 recipes</div>
+          </div>
+          <button class="prep-cta" onclick="goTo('screen-cook-overview')">Start cooking</button>
+        </div>
+
+        <!-- Week strip -->
+        <div class="sec-label">This week</div>
+        <div class="week-strip" style="margin-bottom:20px" id="week-strip-prep"></div>
+
+        <div class="sec-label">Today's meals</div>
+        <div class="today-meal" onclick="goTo('screen-recipe')">
+          <div class="today-meal-emoji">🥣</div>
+          <div class="today-meal-info">
+            <div class="today-meal-type">Breakfast</div>
+            <div class="today-meal-name">Overnight Oats with Mango</div>
+            <div class="today-meal-meta">Sweet · 5 min · 420 cal</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div onclick="event.stopPropagation();showSwapSheet()" style="font-size:11px;color:var(--terra);font-weight:500;background:var(--terra-light);padding:3px 8px;border-radius:100px;cursor:pointer;white-space:nowrap">Swap</div>
+            <div class="today-meal-arrow">›</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="switchTab('home')"><div class="nav-icon">🏠</div>Home</div>
+      <div class="nav-item" onclick="switchTab('plan')"><div class="nav-icon">📅</div>Plan</div>
+      <div class="nav-item" onclick="switchTab('groceries')"><div class="nav-icon">🛒</div>Groceries</div>
+      <div class="nav-item" onclick="switchTab('recipes')"><div class="nav-icon">📖</div>Recipes</div>
+    </div>
+    <div class="fab" onclick="goTo('screen-chat')" style="width:auto;border-radius:100px;padding:0 16px 0 12px;gap:6px;flex-direction:row;">
+      <span style="font-size:20px">🐱</span>
+      <span style="font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap">Ask Maui</span>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       COOK MODE — SESSION OVERVIEW
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-cook-overview">
+    <div class="screen-scroll" style="padding-top:54px;background:var(--dark)">
+      <div style="padding:16px 20px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+          <button class="back-btn" onclick="goBack()" style="background:rgba(250,246,240,.1);color:var(--cream)">←</button>
+          <div>
+            <div style="font-size:13px;color:rgba(250,246,240,.5)">Cook mode</div>
+            <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--cream)">Sunday session</div>
+          </div>
+        </div>
+
+        <!-- Session overview card -->
+        <div style="background:rgba(250,246,240,.06);border-radius:20px;padding:16px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:14px">
+            <div style="font-size:13px;color:rgba(250,246,240,.6)">⏱ ~2 hours total</div>
+            <div style="font-size:13px;color:rgba(250,246,240,.6)">3 recipes</div>
+          </div>
+          <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--orange);margin-bottom:10px">Suggested cook order</div>
+
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="cook-recipe-item" onclick="goTo('screen-cook-steps')">
+              <div class="cook-order-num">1</div>
+              <div>
+                <div class="cook-recipe-name">Korean BBQ Beef Bowl</div>
+                <div class="cook-recipe-time">45 min · Start this first</div>
+              </div>
+              <div class="cook-check" id="check-1">›</div>
+            </div>
+            <div class="cook-recipe-item" onclick="goTo('screen-cook-steps')">
+              <div class="cook-order-num">2</div>
+              <div>
+                <div class="cook-recipe-name">Thai Basil Chicken</div>
+                <div class="cook-recipe-time">30 min · While beef marinates</div>
+              </div>
+              <div class="cook-check" id="check-2">›</div>
+            </div>
+            <div class="cook-recipe-item" onclick="goTo('screen-cook-steps')">
+              <div class="cook-order-num">3</div>
+              <div>
+                <div class="cook-recipe-name">Overnight Oats × 4</div>
+                <div class="cook-recipe-time">5 min · Do last, refrigerate</div>
+              </div>
+              <div class="cook-check" id="check-3">›</div>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="goTo('screen-cook-prep')" style="width:100%;background:var(--terra);color:var(--cream);border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">
+          Let's cook 🍳
+        </button>
+      </div>
+    </div>
+    <div class="home-indicator" style="background:rgba(250,246,240,.3)"></div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════
+       COOK MODE — PREP LIST
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-cook-prep">
+    <div style="position:absolute;top:54px;left:0;right:0;padding:14px 20px;background:var(--dark);z-index:40;display:flex;align-items:center;gap:12px">
+      <button class="back-btn" onclick="goBack()" style="background:rgba(250,246,240,.1);color:var(--cream)">←</button>
+      <div>
+        <div style="font-size:12px;color:rgba(250,246,240,.5)">Sunday session · 3 recipes</div>
+        <div style="font-size:16px;font-weight:600;color:var(--cream)">Before you start</div>
+      </div>
+    </div>
+    <div class="screen-scroll" style="background:var(--dark);padding-top:110px;padding-bottom:100px">
+      <div style="padding:0 20px">
+
+        <!-- Intro -->
+        <div style="font-size:14px;color:rgba(250,246,240,.7);line-height:1.6;margin-bottom:20px">
+          Get these ingredients out and prepped before you turn on the heat. We've combined everything across all 3 recipes.
+        </div>
+
+        <!-- Proteins -->
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--orange);margin-bottom:10px">Proteins</div>
+        <div style="background:rgba(250,246,240,.06);border-radius:14px;padding:14px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(250,246,240,.08)">
+            <div>
+              <div style="font-size:13px;color:var(--cream)">Beef (thinly sliced)</div>
+              <div style="font-size:11px;color:rgba(250,246,240,.4);margin-top:1px">Korean BBQ + Tacos</div>
+            </div>
+            <div style="font-size:13px;color:rgba(250,246,240,.6);font-weight:500">1kg</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+            <div>
+              <div style="font-size:13px;color:var(--cream)">Chicken breast</div>
+              <div style="font-size:11px;color:rgba(250,246,240,.4);margin-top:1px">Thai Basil Chicken</div>
+            </div>
+            <div style="font-size:13px;color:rgba(250,246,240,.6);font-weight:500">600g</div>
+          </div>
+        </div>
+
+        <!-- Produce -->
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--orange);margin-bottom:10px">Produce to prep</div>
+        <div style="background:rgba(250,246,240,.06);border-radius:14px;padding:14px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(250,246,240,.08)">
+            <div>
+              <div style="font-size:13px;color:var(--cream)">Garlic, minced</div>
+              <div style="font-size:11px;color:rgba(250,246,240,.4);margin-top:1px">Used in all 3 recipes</div>
+            </div>
+            <div style="font-size:13px;color:rgba(250,246,240,.6);font-weight:500">8 cloves</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(250,246,240,.08)">
+            <div>
+              <div style="font-size:13px;color:var(--cream)">Cucumber, thinly sliced</div>
+              <div style="font-size:11px;color:rgba(250,246,240,.4);margin-top:1px">Korean BBQ garnish</div>
+            </div>
+            <div style="font-size:13px;color:rgba(250,246,240,.6);font-weight:500">1 whole</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(250,246,240,.08)">
+            <div>
+              <div style="font-size:13px;color:var(--cream)">Spring onions, sliced</div>
+              <div style="font-size:11px;color:rgba(250,246,240,.4);margin-top:1px">Korean BBQ + Thai Basil</div>
+            </div>
+            <div style="font-size:13px;color:rgba(250,246,240,.6);font-weight:500">4 stalks</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+            <div>
+              <div style="font-size:13px;color:var(--cream)">Thai basil, washed</div>
+              <div style="font-size:11px;color:rgba(250,246,240,.4);margin-top:1px">Thai Basil Chicken</div>
+            </div>
+            <div style="font-size:13px;color:rgba(250,246,240,.6);font-weight:500">1 bunch</div>
+          </div>
+        </div>
+
+        <!-- Pantry -->
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--orange);margin-bottom:10px">Measure out</div>
+        <div style="background:rgba(250,246,240,.06);border-radius:14px;padding:14px;margin-bottom:24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(250,246,240,.08)">
+            <div style="font-size:13px;color:var(--cream)">Jasmine rice, rinsed</div>
+            <div style="font-size:13px;color:rgba(250,246,240,.6);font-weight:500">320g</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(250,246,240,.08)">
+            <div style="font-size:13px;color:var(--cream)">Soy sauce</div>
+            <div style="font-size:13px;color:rgba(250,246,240,.6);font-weight:500">5 tbsp total</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(250,246,240,.08)">
+            <div style="font-size:13px;color:var(--cream)">Sesame oil</div>
+            <div style="font-size:13px;color:rgba(250,246,240,.6);font-weight:500">2 tbsp</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+            <div style="font-size:13px;color:var(--cream)">Gochujang paste</div>
+            <div style="font-size:13px;color:rgba(250,246,240,.6);font-weight:500">2 tbsp</div>
+          </div>
+        </div>
+
+        <!-- Tip -->
+        <div style="background:rgba(232,101,42,.15);border-radius:12px;padding:12px 14px;display:flex;gap:10px;margin-bottom:8px">
+          <span style="font-size:18px;flex-shrink:0">🐱</span>
+          <div style="font-size:13px;color:var(--orange);line-height:1.6">Start the beef marinating first thing — it needs at least 20 min and you can prep everything else while it sits.</div>
+        </div>
+
+      </div>
+    </div>
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:12px 20px 32px;background:var(--dark)">
+      <button onclick="goTo('screen-cook-steps')" style="width:100%;background:var(--terra);color:var(--cream);border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Ready — start cooking →</button>
+    </div>
+    <div class="home-indicator" style="background:rgba(250,246,240,.3)"></div>
+  </div>
+  <!-- ═══════════════════════════════════════
+       COOK MODE — STEP BY STEP (DYNAMIC)
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-cook-steps" style="background:var(--dark)">
+    <!-- Header -->
+    <div style="position:absolute;top:54px;left:0;right:0;padding:14px 20px;background:var(--dark);z-index:40;display:flex;align-items:center;gap:12px">
+      <button class="back-btn" onclick="prevCookStep()" style="background:rgba(250,246,240,.1);color:var(--cream)">←</button>
+      <div style="flex:1">
+        <div style="font-size:12px;color:rgba(250,246,240,.5)" id="cook-recipe-label">Korean BBQ Beef Bowl</div>
+        <div id="cook-progress-bars" style="display:flex;gap:6px;margin-top:4px"></div>
+      </div>
+      <div style="font-size:12px;color:rgba(250,246,240,.5)" id="cook-step-counter">Step 1 of 5</div>
+    </div>
+
+    <!-- Body -->
+    <div class="screen-scroll" style="background:var(--dark);padding-top:110px;padding-bottom:100px">
+      <div style="padding:0 20px" id="cook-step-body">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:12px 20px 32px;background:var(--dark);display:flex;gap:10px">
+      <button onclick="prevCookStep()" style="flex:1;background:rgba(250,246,240,.08);color:var(--cream);border:none;border-radius:12px;padding:13px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">← Back</button>
+      <button id="cook-next-btn" onclick="nextCookStep()" style="flex:2;background:var(--terra);color:var(--cream);border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Next step →</button>
+    </div>
+
+    <!-- Recipe transition overlay -->
+    <div id="recipe-transition" style="display:none;position:absolute;inset:0;background:var(--dark);z-index:60;flex-direction:column;align-items:center;justify-content:center;padding:32px">
+      <div style="font-size:56px;margin-bottom:20px" id="rt-emoji">✅</div>
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--orange);margin-bottom:8px">Done!</div>
+      <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--cream);text-align:center;margin-bottom:8px" id="rt-done-name">Korean BBQ Beef Bowl</div>
+      <div style="font-size:14px;color:rgba(250,246,240,.5);text-align:center;margin-bottom:40px">Nailed it. On to the next one.</div>
+      <div style="background:rgba(250,246,240,.06);border-radius:20px;padding:16px 20px;width:100%;margin-bottom:32px;display:flex;align-items:center;gap:14px">
+        <div style="font-size:32px" id="rt-next-emoji">🍜</div>
+        <div>
+          <div style="font-size:11px;color:rgba(250,246,240,.4);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Up next</div>
+          <div style="font-size:16px;font-weight:500;color:var(--cream)" id="rt-next-name">Thai Basil Chicken</div>
+          <div style="font-size:12px;color:rgba(250,246,240,.4);margin-top:2px" id="rt-next-meta">4 steps · ~30 min</div>
+        </div>
+      </div>
+      <button id="rt-start-btn" onclick="startNextRecipe()" style="width:100%;background:var(--terra);color:var(--cream);border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Start cooking →</button>
+    </div>
+    <div class="home-indicator" style="background:rgba(250,246,240,.3)"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       COOK MODE — SESSION COMPLETE
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-cook-done" style="background:var(--dark)">
+    <div class="screen-scroll" style="background:var(--dark);padding-top:60px;padding-bottom:100px">
+      <div style="padding:0 24px;display:flex;flex-direction:column;align-items:center;text-align:center">
+        <div style="font-size:64px;margin-bottom:16px">🎉</div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--orange);margin-bottom:10px">Session complete</div>
+        <div style="font-family:'Playfair Display',serif;font-size:26px;color:var(--cream);line-height:1.3;margin-bottom:10px">Sunday prep is done</div>
+        <div style="font-size:14px;color:rgba(250,246,240,.55);line-height:1.6;margin-bottom:32px">3 recipes cooked. You're covered through Wednesday — just reheat and eat.</div>
+
+        <!-- Summary -->
+        <div style="width:100%;background:rgba(250,246,240,.06);border-radius:20px;padding:16px;margin-bottom:24px;text-align:left">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:rgba(250,246,240,.4);margin-bottom:12px">What you made</div>
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(250,246,240,.07)">
+            <span style="font-size:24px">🥩</span>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--cream)">Korean BBQ Beef Bowl</div>
+              <div style="font-size:11px;color:rgba(250,246,240,.4);margin-top:1px">Lunch + Dinner · Sun–Wed</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(250,246,240,.07)">
+            <span style="font-size:24px">🍜</span>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--cream)">Thai Basil Chicken Bowl</div>
+              <div style="font-size:11px;color:rgba(250,246,240,.4);margin-top:1px">Dinner · Mon–Wed</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 0">
+            <span style="font-size:24px">🥣</span>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--cream)">Overnight Oats × 4</div>
+              <div style="font-size:11px;color:rgba(250,246,240,.4);margin-top:1px">Breakfast · Mon–Thu</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Maui nudge -->
+        <div style="width:100%;background:rgba(232,101,42,.15);border-radius:16px;padding:14px 16px;display:flex;gap:12px;margin-bottom:32px;text-align:left">
+          <span style="font-size:22px;flex-shrink:0">🐱</span>
+          <div style="font-size:13px;color:var(--orange);line-height:1.6">The beef will taste even better tomorrow once the flavours settle. Store everything flat in the fridge so it cools faster.</div>
+        </div>
+
+        <button onclick="goTo('screen-cook-rate')" style="width:100%;background:var(--terra);color:var(--cream);border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:12px">
+          Rate this session →
+        </button>
+        <button onclick="goTo('screen-home')" style="width:100%;background:rgba(250,246,240,.08);color:rgba(250,246,240,.6);border:none;border-radius:14px;padding:14px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">
+          Back to home
+        </button>
+      </div>
+    </div>
+    <div class="home-indicator" style="background:rgba(250,246,240,.3)"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       COOK MODE — RATE THIS SESSION
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-cook-rate">
+    <div style="position:absolute;top:54px;left:0;right:0;padding:14px 20px;background:var(--cream);border-bottom:1px solid var(--border);z-index:40;display:flex;align-items:center;gap:12px">
+      <button class="back-btn" onclick="goBack()">←</button>
+      <div>
+        <div style="font-size:16px;font-weight:600;color:var(--dark)" id="rate-screen-title">Rate your meals</div>
+        <div style="font-size:12px;color:var(--gray)" id="rate-screen-sub">Recipe 1 of 3</div>
+      </div>
+    </div>
+    <div class="screen-scroll" style="padding-top:110px;padding-bottom:100px">
+      <div style="padding:0 24px">
+
+        <!-- Progress dots -->
+        <div id="rate-progress-dots" style="display:flex;gap:8px;justify-content:center;margin-bottom:28px"></div>
+
+        <!-- Recipe being rated -->
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="font-size:52px;margin-bottom:10px" id="rate-emoji">🥩</div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--gray);margin-bottom:4px">🐱 Okay I need to know —</div>
+          <div style="font-family:'Playfair Display',serif;font-size:22px;color:var(--dark);line-height:1.3" id="rate-recipe-name">How was the Korean BBQ bowl?</div>
+        </div>
+
+        <!-- Rating pills -->
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px" id="rate-pills">
+          <div class="reaction rate-pill" style="width:100%;justify-content:flex-start;padding:14px 16px;font-size:14px;border-radius:14px" onclick="selectRatePill(this)">😍 Make it again — obsessed</div>
+          <div class="reaction rate-pill" style="width:100%;justify-content:flex-start;padding:14px 16px;font-size:14px;border-radius:14px" onclick="selectRatePill(this)">👍 It was good, solid choice</div>
+          <div class="reaction rate-pill" style="width:100%;justify-content:flex-start;padding:14px 16px;font-size:14px;border-radius:14px" onclick="selectRatePill(this)">😐 It was fine, maybe once more</div>
+          <div class="reaction rate-pill" style="width:100%;justify-content:flex-start;padding:14px 16px;font-size:14px;border-radius:14px;color:var(--red)" onclick="selectRatePill(this)">🙅 Never again, please</div>
+        </div>
+
+        <!-- Free text -->
+        <div style="margin-bottom:8px">
+          <div style="font-size:12px;font-weight:500;color:var(--gray);margin-bottom:8px">Anything else Maui should know?</div>
+          <textarea id="rate-text" placeholder="e.g. could use more spice, loved the sauce, too salty…" style="width:100%;background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--dark);outline:none;resize:none;min-height:80px;line-height:1.6;transition:border-color .2s" onfocus="this.style.borderColor='var(--terra)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        </div>
+
+      </div>
+    </div>
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:12px 20px 36px;background:linear-gradient(to bottom,transparent,var(--cream) 30%)">
+      <button id="rate-next-btn" onclick="nextRating()" style="width:100%;background:var(--dark);color:var(--cream);border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Tell Maui →</button>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PLAN TAB
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-plan">
+    <div class="screen-scroll">
+      <div style="padding:0 20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-top:8px">
+          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--dark)">Your plan</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div onclick="showPastPlans()" style="font-size:13px;color:var(--terra);font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px">🕐 Past plans</div>
+          </div>
+        </div>
+
+        <!-- Sticky generate next week banner -->
+        <div onclick="showCookAgainSheet('How you cooked last week',[{label:'Sunday prep',covers:'Sun\u2013Wed'},{label:'Thursday prep',covers:'Thu\u2013Sat'}])" id="generate-banner" style="background:var(--terra);border-radius:20px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.15) 0%,transparent 70%);pointer-events:none;"></div>
+          <div>
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.75);margin-bottom:3px">NEXT WEEK</div>
+            <div style="font-size:14px;font-weight:500;color:#FAF6F0">Next week isn't planned yet</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:1px">Maui's ready to build Mar 29</div>
+          </div>
+          <div style="background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.35);color:#FAF6F0;border-radius:100px;padding:8px 16px;font-size:12px;font-weight:500;white-space:nowrap;flex-shrink:0;">Generate →</div>
+        </div>
+
+        <!-- Weekly insight strip -->
+        <div class="insight-card" style="margin-bottom:20px">
+          <div class="insight-icon">💪</div>
+          <div>
+            <div class="insight-title">This week's nutrition</div>
+            <div class="insight-text">~145g protein · ~1,820 cal per day · Built around your body composition goal</div>
+          </div>
+        </div>
+
+        <!-- Session: Sunday -->
+        <div class="session-block">
+          <div class="session-header" style="background:#FDF6F1;border-left:3px solid #C4845A">
+            <div>
+              <div class="session-day" style="color:#C4845A">Sunday prep</div>
+              <div class="session-covers">Covers Sun · Mon · Tue · Wed</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+              <span class="pill pill-terra">batch prep</span>
+              <button onclick="goTo('screen-cook-overview')" style="background:#C4845A;color:#F5F0E8;border:none;border-radius:100px;padding:5px 12px;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Start cooking →</button>
+            </div>
+          </div>
+          <div class="session-recipes">
+            <div class="recipe-row" style="position:relative" onclick="goTo('screen-recipe')">
+              <div class="recipe-emoji">🥩</div>
+              <div class="recipe-info">
+                <div class="recipe-type">Lunch + Dinner</div>
+                <div class="recipe-name">Korean BBQ Beef Bowl</div>
+                <div class="recipe-meta">42g protein · 580 cal · 45 min</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div onclick="event.stopPropagation();showSwapSheet()" style="font-size:11px;color:var(--terra);font-weight:500;background:var(--terra-light);padding:3px 8px;border-radius:100px;cursor:pointer;white-space:nowrap">Swap</div>
+                <div class="recipe-arrow">›</div>
+              </div>
+            </div>
+            <div class="recipe-row" onclick="goTo('screen-recipe')">
+              <div class="recipe-emoji">🍜</div>
+              <div class="recipe-info">
+                <div class="recipe-type">Dinner</div>
+                <div class="recipe-name">Thai Basil Chicken Bowl</div>
+                <div class="recipe-meta">38g protein · 540 cal · 30 min</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div onclick="event.stopPropagation();showSwapSheet()" style="font-size:11px;color:var(--terra);font-weight:500;background:var(--terra-light);padding:3px 8px;border-radius:100px;cursor:pointer;white-space:nowrap">Swap</div>
+                <div class="recipe-arrow">›</div>
+              </div>
+            </div>
+            <div class="recipe-row" onclick="goTo('screen-recipe')">
+              <div class="recipe-emoji">🥣</div>
+              <div class="recipe-info">
+                <div class="recipe-type">Breakfast</div>
+                <div class="recipe-name">Overnight Oats with Mango</div>
+                <div class="recipe-meta">18g protein · 420 cal · 5 min</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div onclick="event.stopPropagation();showSwapSheet()" style="font-size:11px;color:var(--terra);font-weight:500;background:var(--terra-light);padding:3px 8px;border-radius:100px;cursor:pointer;white-space:nowrap">Swap</div>
+                <div class="recipe-arrow">›</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Session: Thursday -->
+        <div class="session-block">
+          <div class="session-header" style="background:#EBF3FB;border-left:3px solid #4A7BA7">
+            <div>
+              <div class="session-day" style="color:#4A7BA7">Thursday prep</div>
+              <div class="session-covers">Covers Thu · Fri · Sat</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+              <span class="pill" style="background:#EBF3FB;color:#4A7BA7">batch prep</span>
+              <button onclick="goTo('screen-cook-overview')" style="background:#4A7BA7;color:#F5F0E8;border:none;border-radius:100px;padding:5px 12px;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Start cooking →</button>
+            </div>
+          </div>
+          <div class="session-recipes">
+            <div class="recipe-row" onclick="goTo('screen-recipe')">
+              <div class="recipe-emoji">🌮</div>
+              <div class="recipe-info">
+                <div class="recipe-type">Lunch</div>
+                <div class="recipe-name">Spicy Korean Beef Tacos</div>
+                <div class="recipe-meta">35g protein · 520 cal · 40 min</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div onclick="event.stopPropagation();showSwapSheet()" style="font-size:11px;color:var(--terra);font-weight:500;background:var(--terra-light);padding:3px 8px;border-radius:100px;cursor:pointer;white-space:nowrap">Swap</div>
+                <div class="recipe-arrow">›</div>
+              </div>
+            </div>
+            <div class="recipe-row" onclick="goTo('screen-recipe')">
+              <div class="recipe-emoji">🥗</div>
+              <div class="recipe-info">
+                <div class="recipe-type">Dinner</div>
+                <div class="recipe-name">Vietnamese Lemongrass Tofu</div>
+                <div class="recipe-meta">28g protein · 490 cal · 35 min</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div onclick="event.stopPropagation();showSwapSheet()" style="font-size:11px;color:var(--terra);font-weight:500;background:var(--terra-light);padding:3px 8px;border-radius:100px;cursor:pointer;white-space:nowrap">Swap</div>
+                <div class="recipe-arrow">›</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:16px"></div>
+
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="switchTab('home')"><div class="nav-icon">🏠</div>Home</div>
+      <div class="nav-item active" onclick="switchTab('plan')"><div class="nav-icon">📅</div>Plan</div>
+      <div class="nav-item" onclick="switchTab('groceries')"><div class="nav-icon">🛒</div>Groceries</div>
+      <div class="nav-item" onclick="switchTab('recipes')"><div class="nav-icon">📖</div>Recipes</div>
+    </div>
+    <div class="fab" onclick="goTo('screen-chat')" style="width:auto;border-radius:100px;padding:0 16px 0 12px;gap:6px;flex-direction:row;">
+      <span style="font-size:20px">🐱</span>
+      <span style="font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap">Ask Maui</span>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PLAN GENERATION
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-plan-gen">
+    <div class="screen-scroll">
+      <div style="padding:0 20px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-top:8px">
+          <button class="back-btn" onclick="goBack()">←</button>
+          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--dark)">Next week</div>
+        </div>
+
+        <!-- Last week pattern card -->
+        <div class="card" style="margin-bottom:20px">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--gray);margin-bottom:10px">How you cooked last week</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--dark)">
+              <div style="width:10px;height:10px;border-radius:50%;background:#C4845A;flex-shrink:0"></div> Sunday prep · covered Sun–Wed
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--dark)">
+              <div style="width:10px;height:10px;border-radius:50%;background:#4A7BA7;flex-shrink:0"></div> Thursday prep · covered Thu–Sat
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button onclick="cookAgainSameWay()" style="flex:1;background:var(--dark);color:var(--cream);border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Cook the same way</button>
+            <button onclick="showCookAgainSheet('Last week',[{label:'Sunday prep',covers:'Sun\u2013Wed'},{label:'Thursday prep',covers:'Thu\u2013Sat'}])" style="flex:1;background:var(--white);border:1px solid var(--border);color:var(--dark);border-radius:12px;padding:11px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Change it up</button>
+          </div>
+        </div>
+
+        <!-- Generate button -->
+        <button onclick="showCookAgainSheet('Last week',[{label:'Sunday prep',covers:'Sun\u2013Wed'},{label:'Thursday prep',covers:'Thu\u2013Sat'}])" style="width:100%;background:var(--terra);color:var(--cream);border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:12px">
+          ✨ Generate my week
+        </button>
+        <div style="text-align:center;font-size:12px;color:var(--gray)">Or tap to see past plans</div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       GROCERIES TAB
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-groceries">
+    <div class="screen-scroll">
+      <div style="padding:0 20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-top:8px">
+          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--dark)">Groceries</div>
+          <button onclick="clearAllGroceries()" style="background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500">Uncheck all</button>
+        </div>
+
+        <!-- Order CTA -->
+        <div id="order-cta" style="background:var(--terra);border-radius:20px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.15) 0%,transparent 70%);pointer-events:none;"></div>
+          <div>
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.75);margin-bottom:3px">YOUR LIST</div>
+            <div style="font-size:14px;font-weight:500;color:#FAF6F0" id="order-count">Order 18 groceries</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:1px">Uncheck what you already have</div>
+          </div>
+          <button onclick="showGroceryProvider()" style="background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.35);color:#FAF6F0;border-radius:100px;padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;">Order →</button>
+        </div>
+
+        <!-- Produce -->
+        <div class="sec-label">Produce</div>
+        <div class="card" style="margin-bottom:16px;padding:0">
+          <div id="grocery-produce"></div>
+        </div>
+
+        <!-- Proteins -->
+        <div class="sec-label">Proteins</div>
+        <div class="card" style="margin-bottom:16px;padding:0">
+          <div id="grocery-proteins"></div>
+        </div>
+
+        <!-- Pantry -->
+        <div class="sec-label">Pantry</div>
+        <div class="card" style="margin-bottom:16px;padding:0">
+          <div id="grocery-pantry"></div>
+        </div>
+
+        <div style="height:20px"></div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="switchTab('home')"><div class="nav-icon">🏠</div>Home</div>
+      <div class="nav-item" onclick="switchTab('plan')"><div class="nav-icon">📅</div>Plan</div>
+      <div class="nav-item active" onclick="switchTab('groceries')"><div class="nav-icon">🛒</div>Groceries</div>
+      <div class="nav-item" onclick="switchTab('recipes')"><div class="nav-icon">📖</div>Recipes</div>
+    </div>
+    <!-- + FAB for adding grocery items -->
+    <div class="fab" onclick="showGroceryAdd()" style="background:var(--terra);font-size:20px;font-weight:300">+</div>
+    <div class="home-indicator"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       RECIPES TAB
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-recipes">
+    <div class="screen-scroll">
+      <div style="padding:0 20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-top:8px">
+          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--dark)">Recipes</div>
+          <div style="background:var(--terra);color:var(--cream);border-radius:100px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer">+ Import</div>
+        </div>
+
+        <!-- Search -->
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <span style="font-size:16px;color:var(--gray)">🔍</span>
+          <input placeholder="Search recipes..." style="flex:1;border:none;background:none;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--dark);outline:none">
+        </div>
+
+        <!-- Filter pills -->
+        <div style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none">
+          <div class="pill pill-terra" style="cursor:pointer;white-space:nowrap">All</div>
+          <div class="pill pill-gray" style="cursor:pointer;white-space:nowrap">Korean</div>
+          <div class="pill pill-gray" style="cursor:pointer;white-space:nowrap">Thai</div>
+          <div class="pill pill-gray" style="cursor:pointer;white-space:nowrap">Highest rated</div>
+          <div class="pill pill-gray" style="cursor:pointer;white-space:nowrap">Quick (&lt;30 min)</div>
+        </div>
+
+        <!-- Recipe grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+          <div class="meal-tile" onclick="goTo('screen-recipe')">
+            <div class="meal-tile-img" style="background:#FBE9E7">🥩</div>
+            <div class="meal-tile-body">
+              <div class="meal-tile-name">Korean BBQ Beef Bowl</div>
+              <div class="meal-tile-meta">⭐ 4.8 · 42g protein</div>
+            </div>
+          </div>
+          <div class="meal-tile" onclick="goTo('screen-recipe')">
+            <div class="meal-tile-img" style="background:#E8F5E9">🍜</div>
+            <div class="meal-tile-body">
+              <div class="meal-tile-name">Thai Basil Chicken</div>
+              <div class="meal-tile-meta">⭐ 4.6 · 38g protein</div>
+            </div>
+          </div>
+          <div class="meal-tile" onclick="goTo('screen-recipe')">
+            <div class="meal-tile-img" style="background:#FFF3E0">🌮</div>
+            <div class="meal-tile-body">
+              <div class="meal-tile-name">Spicy Beef Tacos</div>
+              <div class="meal-tile-meta">⭐ 4.5 · 35g protein</div>
+            </div>
+          </div>
+          <div class="meal-tile" onclick="goTo('screen-recipe')">
+            <div class="meal-tile-img" style="background:#E3F2FD">🥗</div>
+            <div class="meal-tile-body">
+              <div class="meal-tile-name">Vietnamese Tofu Bowl</div>
+              <div class="meal-tile-meta">⭐ 4.2 · 28g protein</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="switchTab('home')"><div class="nav-icon">🏠</div>Home</div>
+      <div class="nav-item" onclick="switchTab('plan')"><div class="nav-icon">📅</div>Plan</div>
+      <div class="nav-item" onclick="switchTab('groceries')"><div class="nav-icon">🛒</div>Groceries</div>
+      <div class="nav-item active" onclick="switchTab('recipes')"><div class="nav-icon">📖</div>Recipes</div>
+    </div>
+    <div class="fab" onclick="goTo('screen-chat')" style="width:auto;border-radius:100px;padding:0 16px 0 12px;gap:6px;flex-direction:row;">
+      <span style="font-size:20px">🐱</span>
+      <span style="font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap">Ask Maui</span>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       RECIPE DETAIL
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-recipe">
+    <div class="screen-scroll" style="padding-top:0;padding-bottom:120px">
+      <!-- Hero -->
+      <div class="recipe-hero" style="background:linear-gradient(135deg,#FBE9E7 0%,#FFD5C8 100%)">
+        <span>🥩</span>
+        <button class="recipe-hero-back" onclick="goBack()">←</button>
+      </div>
+
+      <div style="padding:16px 20px">
+        <!-- Name + metadata -->
+        <div style="margin-bottom:16px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">
+            <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--dark);line-height:1.2;flex:1">Korean BBQ Beef Bowl</div>
+            <div style="display:flex;gap:2px;flex-shrink:0;margin-top:3px">
+              <span style="color:var(--amber);font-size:14px">★★★★★</span>
+            </div>
+          </div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.5;margin-bottom:12px">Caramelised marinated beef over jasmine rice with pickled vegetables and gochujang drizzle. Bold, satisfying, built for batch prep.</div>
+          <div style="display:flex;gap:12px">
+            <span class="pill pill-terra">Korean</span>
+            <span class="pill pill-gray">Lunch · Dinner</span>
+          </div>
+        </div>
+
+        <!-- Meta row -->
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <div style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center">
+            <div style="font-size:11px;color:var(--gray);margin-bottom:2px">Prep</div>
+            <div style="font-size:14px;font-weight:500;color:var(--dark)">15 min</div>
+          </div>
+          <div style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center">
+            <div style="font-size:11px;color:var(--gray);margin-bottom:2px">Cook</div>
+            <div style="font-size:14px;font-weight:500;color:var(--dark)">30 min</div>
+          </div>
+          <div style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center">
+            <div style="font-size:11px;color:var(--gray);margin-bottom:2px">Serves</div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:4px">
+              <button onclick="changeSrv(-1)" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--terra)">−</button>
+              <span id="srv-count" style="font-size:14px;font-weight:500;color:var(--dark)">4</span>
+              <button onclick="changeSrv(1)" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--terra)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action row -->
+        <div class="recipe-actions" style="margin-bottom:20px">
+          <div class="recipe-action-btn" onclick="this.querySelector('.icon').textContent='🔖';this.style.background='var(--terra-light)'">
+            <div class="icon">🔖</div>Save
+          </div>
+          <div class="recipe-action-btn" onclick="showRating()">
+            <div class="icon">😸</div>Rate
+          </div>
+          <div class="recipe-action-btn" onclick="showSwapSheet()">
+            <div class="icon">🔄</div>Swap
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-bar" id="recipe-tab-bar">
+          <div class="tab active" onclick="switchRecipeTab('ingredients',this)">Ingredients</div>
+          <div class="tab" onclick="switchRecipeTab('instructions',this)">Instructions</div>
+          <div class="tab" onclick="switchRecipeTab('nutrition',this)">Nutrition</div>
+        </div>
+
+        <!-- Ingredients -->
+        <div id="tab-ingredients">
+          <div class="ingredient-row"><span>Beef (thinly sliced)</span><span class="ingredient-qty">500g</span></div>
+          <div class="ingredient-row"><span>Jasmine rice</span><span class="ingredient-qty">320g</span></div>
+          <div class="ingredient-row"><span>Soy sauce</span><span class="ingredient-qty">3 tbsp</span></div>
+          <div class="ingredient-row"><span>Sesame oil</span><span class="ingredient-qty">1 tbsp</span></div>
+          <div class="ingredient-row"><span>Brown sugar</span><span class="ingredient-qty">2 tbsp</span></div>
+          <div class="ingredient-row"><span>Garlic cloves</span><span class="ingredient-qty">4</span></div>
+          <div class="ingredient-row"><span>Gochujang paste</span><span class="ingredient-qty">2 tbsp</span></div>
+          <div class="ingredient-row"><span>Cucumber</span><span class="ingredient-qty">1</span></div>
+          <div class="ingredient-row"><span>Spring onions</span><span class="ingredient-qty">3</span></div>
+        </div>
+
+        <!-- Instructions -->
+        <div id="tab-instructions" style="display:none">
+          <div class="step-row"><div class="step-num">1</div><div class="step-text">Combine beef with soy sauce, sesame oil, brown sugar, garlic, and ginger. Marinate for at least 20 minutes.</div></div>
+          <div class="step-row"><div class="step-num">2</div><div class="step-text">Cook jasmine rice according to package instructions. Fluff with a fork and keep warm.</div></div>
+          <div class="step-row"><div class="step-num">3</div><div class="step-text">Heat a large pan or wok over high heat. Cook beef in batches until caramelised, about 3–4 minutes per side.</div></div>
+          <div class="step-row"><div class="step-num">4</div><div class="step-text">Thinly slice cucumber. Mix with a pinch of salt and rice vinegar for a quick pickle.</div></div>
+          <div class="step-row"><div class="step-num">5</div><div class="step-text">Divide rice into containers. Top with beef, pickled cucumber, spring onions, and a drizzle of gochujang.</div></div>
+        </div>
+
+        <!-- Nutrition -->
+        <div id="tab-nutrition" style="display:none">
+          <div class="nutrition-grid" style="margin-bottom:12px">
+            <div class="nutrition-cell">
+              <div class="nutrition-val">580</div>
+              <div class="nutrition-unit">kcal</div>
+              <div class="nutrition-label">Calories</div>
+            </div>
+            <div class="nutrition-cell">
+              <div class="nutrition-val" style="color:var(--terra)">42g</div>
+              <div class="nutrition-unit">protein</div>
+              <div class="nutrition-label">Protein</div>
+            </div>
+            <div class="nutrition-cell">
+              <div class="nutrition-val">58g</div>
+              <div class="nutrition-unit">carbs</div>
+              <div class="nutrition-label">Carbohydrates</div>
+            </div>
+            <div class="nutrition-cell">
+              <div class="nutrition-val">14g</div>
+              <div class="nutrition-unit">fat</div>
+              <div class="nutrition-label">Fat</div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--gray);text-align:center">Per serving · based on 4 servings</div>
+        </div>
+
+      </div>
+    </div>
+    <!-- Modify FAB -->
+    <button class="modify-fab" onclick="goTo('screen-chat')">✏️ Modify with Maui</button>
+    <div class="home-indicator"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       MAUI CHAT
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-chat">
+    <div class="chat-header">
+      <button class="back-btn" onclick="goBack()" style="flex-shrink:0">←</button>
+      <div class="chat-maui-avatar">🐱</div>
+      <div>
+        <div class="chat-maui-name">Maui</div>
+        <div class="chat-maui-status">● Ready to help</div>
+      </div>
+    </div>
+
+    <div class="chat-scroll" id="chat-messages">
+      <div class="chat-row">
+        <div class="chat-avatar-sm">🐱</div>
+        <div class="chat-bubble maui">Hey! What's on your mind this week? 😸</div>
+      </div>
+    </div>
+
+    <!-- Suggestion pills -->
+    <div class="suggestion-pills" id="chat-pills">
+      <div class="suggestion-pill" onclick="sendSuggestion(this)">Swap tonight's dinner</div>
+      <div class="suggestion-pill" onclick="sendSuggestion(this)">I'm bored of chicken</div>
+      <div class="suggestion-pill" onclick="sendSuggestion(this)">Make next week spicier</div>
+      <div class="suggestion-pill" onclick="sendSuggestion(this)">Add something high protein</div>
+    </div>
+
+    <div class="chat-input-wrap">
+      <input class="chat-input" id="chat-input" placeholder="Ask Maui anything..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="chat-send-btn" onclick="sendChat()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M22 2L11 13M22 2L15 22 11 13 2 9l20-7z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       STREAKS + STATS
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-streaks">
+    <div class="screen-scroll">
+      <div style="padding:0 20px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-top:8px">
+          <button class="back-btn" onclick="goBack()">←</button>
+          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--dark)">Your progress</div>
+        </div>
+
+        <!-- Streak stats -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+          <div class="streak-stat">
+            <div class="streak-stat-val">🔥 4</div>
+            <div class="streak-stat-label">Weeks with Maui</div>
+          </div>
+          <div class="streak-stat">
+            <div class="streak-stat-val">11</div>
+            <div class="streak-stat-label">Sessions cooked this month</div>
+          </div>
+          <div class="streak-stat">
+            <div class="streak-stat-val">14</div>
+            <div class="streak-stat-label">Recipes rated 4★+</div>
+          </div>
+          <div class="streak-stat">
+            <div class="streak-stat-val">3</div>
+            <div class="streak-stat-label">Meals swapped this week</div>
+          </div>
+        </div>
+
+        <!-- Weekly insight -->
+        <div class="sec-label">This week's nutrition</div>
+        <div class="card-terra" style="margin-bottom:20px">
+          <div style="font-size:14px;font-weight:500;color:var(--dark);margin-bottom:6px">~145g protein per day</div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:12px">Right on track for your body composition goal. Maui's recipe selection this week is higher in protein than last week's plan.</div>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1;background:white;border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:18px;font-weight:600;color:var(--dark)">1,820</div>
+              <div style="font-size:10px;color:var(--gray);margin-top:2px">cal / day</div>
+            </div>
+            <div style="flex:1;background:white;border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:18px;font-weight:600;color:var(--terra)">145g</div>
+              <div style="font-size:10px;color:var(--gray);margin-top:2px">protein</div>
+            </div>
+            <div style="flex:1;background:white;border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:18px;font-weight:600;color:var(--dark)">182g</div>
+              <div style="font-size:10px;color:var(--gray);margin-top:2px">carbs</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Check-in -->
+        <div class="sec-label">How are you feeling?</div>
+        <div class="card" style="margin-bottom:20px">
+          <div style="font-size:14px;font-weight:500;color:var(--dark);margin-bottom:4px">Week 4 check-in from Maui 🐱</div>
+          <div style="font-size:13px;color:var(--gray);margin-bottom:14px">How are you feeling compared to when you started?</div>
+          <div class="reactions">
+            <div class="reaction" onclick="this.classList.toggle('selected')">⚡ More energy</div>
+            <div class="reaction" onclick="this.classList.toggle('selected')">💪 Feeling stronger</div>
+            <div class="reaction" onclick="this.classList.toggle('selected')">😊 About the same</div>
+            <div class="reaction" onclick="this.classList.toggle('selected')">🤷 Not sure yet</div>
+          </div>
+          <button style="width:100%;margin-top:14px;background:var(--dark);color:var(--cream);border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Send to Maui</button>
+        </div>
+
+        <!-- Recipe milestone -->
+        <div class="insight-card" style="margin-bottom:24px">
+          <div class="insight-icon">🎯</div>
+          <div>
+            <div class="insight-title">Taste profile update</div>
+            <div class="insight-text">You've rated 14 recipes 4 stars or higher — your taste profile is really dialled in now. Maui's getting better at predicting what you'll love.</div>
+          </div>
+        </div>
+
+        <!-- Cat Badges -->
+        <div class="sec-label">Your Maui badges</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+          <!-- Earned -->
+          <div style="background:var(--terra-light);border:1.5px solid var(--terra-mid);border-radius:16px;padding:14px 8px;text-align:center">
+            <div style="font-size:36px;margin-bottom:6px">🐱</div>
+            <div style="font-size:11px;font-weight:600;color:var(--terra);margin-bottom:2px">Curious Maui</div>
+            <div style="font-size:10px;color:var(--gray)">Week 1</div>
+          </div>
+          <div style="background:var(--terra-light);border:1.5px solid var(--terra-mid);border-radius:16px;padding:14px 8px;text-align:center">
+            <div style="font-size:36px;margin-bottom:6px">😸</div>
+            <div style="font-size:11px;font-weight:600;color:var(--terra);margin-bottom:2px">Settled In</div>
+            <div style="font-size:10px;color:var(--gray)">Week 4 ✓</div>
+          </div>
+          <div style="background:var(--amber-light);border:1.5px solid rgba(201,168,76,.3);border-radius:16px;padding:14px 8px;text-align:center">
+            <div style="font-size:36px;margin-bottom:6px">🌶️</div>
+            <div style="font-size:11px;font-weight:600;color:var(--amber);margin-bottom:2px">Spice Lover</div>
+            <div style="font-size:10px;color:var(--gray)">10 spicy meals ✓</div>
+          </div>
+          <!-- Locked -->
+          <div style="background:var(--cream-mid);border:1.5px solid var(--border);border-radius:16px;padding:14px 8px;text-align:center;opacity:.6">
+            <div style="font-size:36px;margin-bottom:6px;filter:grayscale(1)">🙀</div>
+            <div style="font-size:11px;font-weight:600;color:var(--gray);margin-bottom:2px">Obsessed Maui</div>
+            <div style="font-size:10px;color:var(--gray)">🔒 Week 8</div>
+          </div>
+          <div style="background:var(--cream-mid);border:1.5px solid var(--border);border-radius:16px;padding:14px 8px;text-align:center;opacity:.6">
+            <div style="font-size:36px;margin-bottom:6px;filter:grayscale(1)">🌍</div>
+            <div style="font-size:11px;font-weight:600;color:var(--gray);margin-bottom:2px">Variety King</div>
+            <div style="font-size:10px;color:var(--gray)">🔒 5 cuisines/wk</div>
+          </div>
+          <div style="background:var(--cream-mid);border:1.5px solid var(--border);border-radius:16px;padding:14px 8px;text-align:center;opacity:.6">
+            <div style="font-size:36px;margin-bottom:6px;filter:grayscale(1)">😼</div>
+            <div style="font-size:11px;font-weight:600;color:var(--gray);margin-bottom:2px">Seasoned Maui</div>
+            <div style="font-size:10px;color:var(--gray)">🔒 Week 12</div>
+          </div>
+          <div style="background:var(--cream-mid);border:1.5px solid var(--border);border-radius:16px;padding:14px 8px;text-align:center;opacity:.6">
+            <div style="font-size:36px;margin-bottom:6px;filter:grayscale(1)">🏆</div>
+            <div style="font-size:11px;font-weight:600;color:var(--gray);margin-bottom:2px">Prep Champion</div>
+            <div style="font-size:10px;color:var(--gray)">🔒 No missed days</div>
+          </div>
+          <div style="background:var(--cream-mid);border:1.5px solid var(--border);border-radius:16px;padding:14px 8px;text-align:center;opacity:.6">
+            <div style="font-size:36px;margin-bottom:6px;filter:grayscale(1)">👑</div>
+            <div style="font-size:11px;font-weight:600;color:var(--gray);margin-bottom:2px">Legend Maui</div>
+            <div style="font-size:10px;color:var(--gray)">🔒 Week 24</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SETTINGS
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-settings">
+    <div class="screen-scroll">
+      <div style="padding:0 20px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-top:8px">
+          <button class="back-btn" onclick="goBack()">←</button>
+          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--dark)">Settings</div>
+        </div>
+
+        <!-- Profile -->
+        <div class="sec-label">Your profile</div>
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+            <div style="width:52px;height:52px;border-radius:50%;background:var(--terra-light);border:2px solid var(--terra);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🐱</div>
+            <div>
+              <div style="font-size:16px;font-weight:500;color:var(--dark)">Jordan</div>
+              <div style="font-size:12px;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c6aca9b4a2a7a886a3bea7abb6aaa3e8a5a9ab">[email&#160;protected]</a></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
+              <span style="color:var(--dark)">Goal</span>
+              <span style="color:var(--terra);font-weight:500">Body composition ›</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
+              <span style="color:var(--dark)">Meal scope</span>
+              <span style="color:var(--terra);font-weight:500">All meals ›</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
+              <span style="color:var(--dark)">Cuisines</span>
+              <span style="color:var(--terra);font-weight:500">Korean, Thai, Italian ›</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:13px">
+              <span style="color:var(--dark)">Nutrition targets</span>
+              <span style="color:var(--terra);font-weight:500">See targets ›</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subscription -->
+        <div class="sec-label">Subscription</div>
+        <div class="card-terra" style="margin-bottom:16px">
+          <div style="font-size:14px;font-weight:500;color:var(--dark);margin-bottom:4px">30-day free trial</div>
+          <div style="font-size:12px;color:var(--gray)">26 days remaining · $9.99/month after trial</div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="sec-label">Notifications</div>
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:13px;color:var(--dark)">Prep day reminders</span>
+            <div style="width:44px;height:24px;background:var(--green);border-radius:100px;position:relative"><div style="position:absolute;right:2px;top:2px;width:20px;height:20px;background:white;border-radius:50%"></div></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+            <span style="font-size:13px;color:var(--dark)">Weekly plan ready</span>
+            <div style="width:44px;height:24px;background:var(--green);border-radius:100px;position:relative"><div style="position:absolute;right:2px;top:2px;width:20px;height:20px;background:white;border-radius:50%"></div></div>
+          </div>
+        </div>
+
+        <!-- Support -->
+        <div class="sec-label">Support</div>
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer">
+            <span style="font-size:13px;color:var(--dark)">Give feedback</span>
+            <span style="color:var(--gray)">›</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;cursor:pointer">
+            <span style="font-size:13px;color:var(--dark)">About Maui</span>
+            <span style="color:var(--gray)">›</span>
+          </div>
+        </div>
+
+        <!-- Account actions -->
+        <div class="card" style="margin-bottom:32px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer">
+            <span style="font-size:13px;color:var(--dark)">Sign out</span>
+            <span style="color:var(--gray)">›</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;cursor:pointer">
+            <span style="font-size:13px;color:var(--red)">Delete account</span>
+            <span style="color:var(--red)">›</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       RATING MODAL
+  ═══════════════════════════════════════ -->
+  <div id="rating-modal" style="display:none;position:absolute;inset:0;background:rgba(30,18,8,.6);z-index:200;display:none;align-items:flex-end">
+    <div style="width:100%;background:var(--cream);border-radius:28px 28px 0 0;padding:24px 24px 40px">
+      <div style="font-size:40px;text-align:center;margin-bottom:8px">🐱</div>
+      <div style="font-size:16px;font-weight:600;color:var(--dark);text-align:center;margin-bottom:4px">Okay I need to know —</div>
+      <div style="font-size:14px;color:var(--gray);text-align:center;margin-bottom:20px">How was the Korean BBQ bowl?</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+        <div class="reaction" style="width:100%;justify-content:flex-start;padding:14px 16px;font-size:14px" onclick="selectReaction(this)">😍 Make it again — obsessed</div>
+        <div class="reaction" style="width:100%;justify-content:flex-start;padding:14px 16px;font-size:14px" onclick="selectReaction(this)">👍 It was good, solid choice</div>
+        <div class="reaction" style="width:100%;justify-content:flex-start;padding:14px 16px;font-size:14px" onclick="selectReaction(this)">😐 It was fine, maybe once more</div>
+        <div class="reaction" style="width:100%;justify-content:flex-start;padding:14px 16px;font-size:14px;color:var(--red)" onclick="selectReaction(this)">🙅 Never again, please</div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:500;color:var(--gray);margin-bottom:8px">Anything else Maui should know?</div>
+        <textarea placeholder="e.g. could use more spice, loved the sauce…" style="width:100%;background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--dark);outline:none;resize:none;min-height:72px;line-height:1.6;transition:border-color .2s" onfocus="this.style.borderColor='var(--terra)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      </div>
+      <button onclick="closeRating()" style="width:100%;background:var(--dark);color:var(--cream);border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Tell Maui</button>
+    </div>
+  </div>
+
+
+  <!-- ═══ SWAP SHEET ═══ -->
+  <div id="swap-sheet" style="display:none;position:absolute;inset:0;background:rgba(30,18,8,.55);z-index:200;align-items:flex-end">
+    <div style="width:100%;background:var(--cream);border-radius:28px 28px 0 0;padding:0 0 40px;max-height:90%">
+      <!-- handle -->
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 16px"></div>
+      <!-- recipe being swapped -->
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--white);border-bottom:1px solid var(--border);margin-bottom:16px">
+        <div style="width:44px;height:44px;border-radius:10px;background:#FBE9E7;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🥣</div>
+        <div>
+          <div style="font-size:12px;color:var(--gray);margin-bottom:1px">Swapping</div>
+          <div style="font-size:15px;font-weight:600;color:var(--dark)">Overnight Oats with Mango</div>
+        </div>
+      </div>
+      <!-- Maui message -->
+      <div style="margin:0 20px 16px;background:var(--white);border:1px solid var(--border);border-radius:16px;padding:14px">
+        <div style="font-size:13px;color:var(--dark);line-height:1.55">Here are some alternatives that fit your taste profile. Tap one to select, or tell me what you're looking for.</div>
+      </div>
+      <!-- Alternatives -->
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:8px;margin-bottom:16px" id="swap-options">
+        <div class="swap-option" onclick="selectSwap(this)" style="display:flex;align-items:center;gap:12px;background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .15s">
+          <div style="font-size:28px">🍳</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:500;color:var(--dark)">Scrambled Eggs & Avocado</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:2px">28g protein · 10 min · Suggested</div>
+          </div>
+          <div class="swap-radio" style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0"></div>
+        </div>
+        <div class="swap-option" onclick="selectSwap(this)" style="display:flex;align-items:center;gap:12px;background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .15s">
+          <div style="font-size:28px">🥗</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:500;color:var(--dark)">Greek Yogurt Parfait</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:2px">22g protein · 5 min · Suggested</div>
+          </div>
+          <div class="swap-radio" style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0"></div>
+        </div>
+        <div class="swap-option" onclick="selectSwap(this)" style="display:flex;align-items:center;gap:12px;background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .15s">
+          <div style="font-size:28px">🧀</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:500;color:var(--dark)">Cottage Cheese & Berries</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:2px">24g protein · 3 min · Suggested</div>
+          </div>
+          <div class="swap-radio" style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0"></div>
+        </div>
+      </div>
+      <!-- Confirm button -->
+      <div style="padding:0 20px;margin-bottom:12px">
+        <button id="confirm-swap-btn" onclick="closeSwapSheet()" style="width:100%;background:var(--border);color:var(--gray);border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s" disabled>Confirm swap →</button>
+      </div>
+      <!-- Suggestion pills + input -->
+      <div style="padding:0 20px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--gray);margin-bottom:8px">Or tell Maui</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none">
+          <div class="suggestion-pill" onclick="swapPillTap(this)">More protein</div>
+          <div class="suggestion-pill" onclick="swapPillTap(this)">Something warm</div>
+          <div class="suggestion-pill" onclick="swapPillTap(this)">Make it egg-based</div>
+          <div class="suggestion-pill" onclick="swapPillTap(this)">Surprise me</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input placeholder="Tell Maui what you want..." style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:100px;padding:10px 16px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--dark);outline:none">
+          <button onclick="closeSwapSheet()" style="width:38px;height:38px;border-radius:50%;background:var(--terra);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M22 2L11 13M22 2L15 22 11 13 2 9l20-7z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAST PLANS SHEET ═══ -->
+  <div id="past-plans-sheet" style="display:none;position:absolute;inset:0;background:rgba(30,18,8,.55);z-index:200;align-items:flex-end">
+    <div style="width:100%;background:var(--cream);border-radius:28px 28px 0 0;padding:0 0 40px;max-height:85%">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 0"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px">
+        <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--dark)">Past plans</div>
+        <button onclick="closePastPlans()" style="background:var(--cream-mid);border:none;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer">✕</button>
+      </div>
+      <div style="overflow-y:auto;max-height:60vh;padding:0 20px">
+        <!-- Past plan cards -->
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--dark)">Week of Mar 15</div>
+              <div style="font-size:12px;color:var(--gray);margin-top:2px">5 recipes · 2 prep sessions</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:3px;font-size:12px;color:var(--amber)">★★★★☆ <span style="color:var(--gray)">4.2</span></div>
+          </div>
+          <div style="font-size:12px;color:var(--gray);margin-bottom:10px">Thai Basil Chicken · Korean BBQ · Overnight Oats · Spicy Tacos · Tofu Bowl</div>
+          <button onclick="showCookAgainSheet('Week of Mar 15',[{label:'Sunday prep',covers:'Sun–Wed'},{label:'Thursday prep',covers:'Thu–Sat'}])" style="width:100%;background:var(--dark);color:var(--cream);border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Cook this again</button>
+        </div>
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--dark)">Week of Mar 8</div>
+              <div style="font-size:12px;color:var(--gray);margin-top:2px">6 recipes · 2 prep sessions</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:3px;font-size:12px;color:var(--amber)">★★★★★ <span style="color:var(--gray)">4.8</span></div>
+          </div>
+          <div style="font-size:12px;color:var(--gray);margin-bottom:10px">Lemongrass Pork · Miso Salmon · Chia Pudding · Kimchi Fried Rice · Tofu Scramble · Greek Bowl</div>
+          <button onclick="showCookAgainSheet('Week of Mar 8',[{label:'Sunday prep',covers:'Sun–Wed'},{label:'Thursday prep',covers:'Thu–Sat'}])" style="width:100%;background:var(--dark);color:var(--cream);border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Cook this again</button>
+        </div>
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--dark)">Week of Mar 1</div>
+              <div style="font-size:12px;color:var(--gray);margin-top:2px">4 recipes · 2 prep sessions</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:3px;font-size:12px;color:var(--amber)">★★★☆☆ <span style="color:var(--gray)">3.5</span></div>
+          </div>
+          <div style="font-size:12px;color:var(--gray);margin-bottom:10px">Chicken Teriyaki · Veggie Stir Fry · Overnight Oats · Turkey Meatballs</div>
+          <button onclick="showCookAgainSheet('Week of Mar 1',[{label:'Sunday prep',covers:'Sun–Thu'}])" style="width:100%;background:var(--dark);color:var(--cream);border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Cook this again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ COOK AGAIN SHEET ═══ -->
+  <div id="cook-again-sheet" style="display:none;position:absolute;inset:0;background:rgba(30,18,8,.55);z-index:300;align-items:flex-end" onclick="if(event.target===this)closeCookAgainSheet()">
+    <div style="width:100%;background:var(--cream);border-radius:28px 28px 0 0;padding:0 20px 40px">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 20px"></div>
+
+      <!-- Plan recap -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:20px">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--gray);margin-bottom:10px" id="cook-again-week">Week of Mar 15</div>
+        <div id="cook-again-sessions" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+
+      <!-- Two options -->
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <button onclick="cookAgainSameWay()" style="flex:1;background:var(--dark);color:var(--cream);border:none;border-radius:14px;padding:15px 10px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Cook the same way</button>
+        <button onclick="toggleCookAgainPicker()" id="cook-again-change-btn" style="flex:1;background:var(--white);color:var(--dark);border:1.5px solid var(--border);border-radius:14px;padding:15px 10px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all .2s">Change it up</button>
+      </div>
+
+      <!-- Inline day picker (hidden by default) -->
+      <div id="cook-again-picker" style="display:none;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:500;color:var(--dark);margin-bottom:4px">Pick your prep days this week</div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:14px">Tap a day to select · tap again to deselect</div>
+        <div id="cook-again-day-strip" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px"></div>
+        <!-- Session panel -->
+        <div id="ca-session-panel" style="display:none;border-radius:16px;overflow:hidden;margin-bottom:10px"></div>
+        <!-- Coverage summary -->
+        <div id="ca-coverage-summary" style="min-height:24px;margin-bottom:4px"></div>
+      </div>
+
+      <button id="cook-again-confirm-btn" style="display:none;width:100%;background:var(--terra);color:var(--cream);border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="cookAgainConfirm()">Confirm — generate my week →</button>
+    </div>
+  </div>
+  <div id="grocery-provider-sheet" style="display:none;position:absolute;inset:0;background:rgba(30,18,8,.55);z-index:200;align-items:flex-end">
+    <div style="width:100%;background:var(--cream);border-radius:28px 28px 0 0;padding:0 20px 40px">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 16px"></div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--dark);margin-bottom:4px">Place your order</div>
+      <div style="font-size:13px;color:var(--gray);margin-bottom:16px">Select your preferred grocery provider</div>
+      <input placeholder="Add your zip code to find stores" style="width:100%;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:11px 16px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--dark);outline:none;margin-bottom:16px">
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+        <div onclick="closeGroceryProvider()" style="display:flex;align-items:center;gap:14px;background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer">
+          <div style="width:44px;height:44px;border-radius:10px;background:#232F3E;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🛒</div>
+          <div style="flex:1"><div style="font-size:14px;font-weight:500;color:var(--dark)">Amazon Fresh</div><div style="font-size:12px;color:var(--gray)">Free delivery over $100</div></div>
+          <span style="color:var(--gray)">›</span>
+        </div>
+        <div onclick="closeGroceryProvider()" style="display:flex;align-items:center;gap:14px;background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer">
+          <div style="width:44px;height:44px;border-radius:10px;background:#0071CE;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏪</div>
+          <div style="flex:1"><div style="font-size:14px;font-weight:500;color:var(--dark)">Walmart</div><div style="font-size:12px;color:var(--gray)">Pickup & delivery available</div></div>
+          <span style="color:var(--gray)">›</span>
+        </div>
+        <div onclick="closeGroceryProvider()" style="display:flex;align-items:center;gap:14px;background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer">
+          <div style="width:44px;height:44px;border-radius:10px;background:#F26722;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🥕</div>
+          <div style="flex:1"><div style="font-size:14px;font-weight:500;color:var(--dark)">Instacart</div><div style="font-size:12px;color:var(--gray)">Multiple stores available</div></div>
+          <span style="color:var(--gray)">›</span>
+        </div>
+        <div onclick="closeGroceryProvider()" style="display:flex;align-items:center;gap:14px;background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer">
+          <div style="width:44px;height:44px;border-radius:10px;background:#003087;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏬</div>
+          <div style="flex:1"><div style="font-size:14px;font-weight:500;color:var(--dark)">Kroger</div><div style="font-size:12px;color:var(--gray)">Pickup & delivery available</div></div>
+          <span style="color:var(--gray)">›</span>
+        </div>
+      </div>
+      <button onclick="closeGroceryProvider()" style="width:100%;background:var(--cream-mid);color:var(--gray);border:none;border-radius:14px;padding:13px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ═══ GROCERY ADD SHEET ═══ -->
+  <div id="grocery-add-sheet" style="display:none;position:absolute;inset:0;background:rgba(30,18,8,.55);z-index:200;align-items:flex-end">
+    <div style="width:100%;background:var(--cream);border-radius:28px 28px 0 0;padding:0 20px 40px">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 16px"></div>
+      <div style="font-size:16px;font-weight:600;color:var(--dark);margin-bottom:14px">Add an item</div>
+      <input id="grocery-add-input" placeholder="e.g. almond butter, hot sauce..." style="width:100%;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--dark);outline:none;margin-bottom:12px">
+      <button onclick="closeGroceryAdd()" style="width:100%;background:var(--dark);color:var(--cream);border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Add to list</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PAST PLANS SCREEN
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-past-plans">
+    <div class="screen-scroll">
+      <div style="padding:0 20px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-top:8px">
+          <button class="back-btn" onclick="goBack()">←</button>
+          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--dark)">Past plans</div>
+        </div>
+
+        <!-- Filter pills -->
+        <div style="display:flex;gap:8px;margin-bottom:20px">
+          <div id="pill-saved" onclick="switchPastPlans('saved',this)" style="background:var(--white);border:1px solid var(--border);color:var(--gray);border-radius:100px;padding:8px 18px;font-size:13px;cursor:pointer">⭐ Saved</div>
+          <div id="pill-all" onclick="switchPastPlans('all',this)" style="background:var(--dark);color:var(--cream);border-radius:100px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer">All plans</div>
+        </div>
+
+        <!-- Saved plans view -->
+        <div id="past-plans-saved" style="display:none">
+          <div style="background:var(--amber-light);border:1px solid rgba(201,168,76,.25);border-radius:16px;padding:14px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--dark)">Week of Mar 8</div>
+                <div style="font-size:12px;color:var(--gray);margin-top:2px">6 recipes · ★★★★★ 4.8</div>
+              </div>
+              <div style="font-size:18px">⭐</div>
+            </div>
+            <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5">Lemongrass Pork · Miso Salmon · Chia Pudding · Kimchi Fried Rice · Tofu Scramble · Greek Bowl</div>
+            <button onclick="showCookAgainSheet('Week of Mar 15',[{label:'Sunday prep',covers:'Sun–Wed'},{label:'Thursday prep',covers:'Thu–Sat'}])" style="width:100%;background:var(--dark);color:var(--cream);border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Cook this again</button>
+          </div>
+          <div style="text-align:center;padding:24px 0;color:var(--gray);font-size:13px">Save a plan from All plans to pin it here</div>
+        </div>
+
+        <!-- All plans view -->
+        <div id="past-plans-all">
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--dark)">Week of Mar 15</div>
+                <div style="font-size:12px;color:var(--gray);margin-top:2px">5 recipes · ★★★★☆ 4.2</div>
+              </div>
+              <button style="background:none;border:none;font-size:11px;color:var(--terra);cursor:pointer;font-weight:600">Save ⭐</button>
+            </div>
+            <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5">Thai Basil Chicken · Korean BBQ · Overnight Oats · Spicy Tacos · Tofu Bowl</div>
+            <button onclick="showCookAgainSheet('Week of Mar 8',[{label:'Sunday prep',covers:'Sun–Wed'},{label:'Thursday prep',covers:'Thu–Sat'}])" style="width:100%;background:var(--dark);color:var(--cream);border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Cook this again</button>
+          </div>
+          <div style="background:var(--amber-light);border:1px solid rgba(201,168,76,.25);border-radius:16px;padding:14px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--dark)">Week of Mar 8 ⭐</div>
+                <div style="font-size:12px;color:var(--gray);margin-top:2px">6 recipes · ★★★★★ 4.8 · Saved</div>
+              </div>
+              <button style="background:none;border:none;font-size:11px;color:var(--gray);cursor:pointer">Saved ✓</button>
+            </div>
+            <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5">Lemongrass Pork · Miso Salmon · Chia Pudding · Kimchi Fried Rice · Tofu Scramble · Greek Bowl</div>
+            <button onclick="showCookAgainSheet('Week of Mar 1',[{label:'Sunday prep',covers:'Sun–Thu'}])" style="width:100%;background:var(--dark);color:var(--cream);border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Cook this again</button>
+          </div>
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--dark)">Week of Mar 1</div>
+                <div style="font-size:12px;color:var(--gray);margin-top:2px">4 recipes · ★★★☆☆ 3.5</div>
+              </div>
+              <button style="background:none;border:none;font-size:11px;color:var(--terra);cursor:pointer;font-weight:600">Save ⭐</button>
+            </div>
+            <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5">Chicken Teriyaki · Veggie Stir Fry · Overnight Oats · Turkey Meatballs</div>
+            <button onclick="showCookAgainSheet('Week of Feb 22',[{label:'Sunday prep',covers:'Sun–Wed'},{label:'Wednesday prep',covers:'Wed–Sat'}])" style="width:100%;background:var(--dark);color:var(--cream);border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Cook this again</button>
+          </div>
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--dark)">Week of Feb 22</div>
+                <div style="font-size:12px;color:var(--gray);margin-top:2px">5 recipes · ★★★★☆ 4.0</div>
+              </div>
+              <button style="background:none;border:none;font-size:11px;color:var(--terra);cursor:pointer;font-weight:600">Save ⭐</button>
+            </div>
+            <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5">Spicy Tuna Bowl · Egg Fried Rice · Greek Yogurt Parfait · Pesto Pasta · Lentil Soup</div>
+            <button onclick="showCookAgainSheet('Week of Feb 15',[{label:'Sunday prep',covers:'Sun–Wed'},{label:'Thursday prep',covers:'Thu–Sat'}])" style="width:100%;background:var(--dark);color:var(--cream);border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Cook this again</button>
+          </div>
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--dark)">Week of Feb 15</div>
+                <div style="font-size:12px;color:var(--gray);margin-top:2px">5 recipes · ★★★★☆ 3.8</div>
+              </div>
+              <button style="background:none;border:none;font-size:11px;color:var(--terra);cursor:pointer;font-weight:600">Save ⭐</button>
+            </div>
+            <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5">Miso Glazed Salmon · Edamame Rice Bowl · Avocado Toast · Dal · Chicken Shawarma</div>
+            <button onclick="showCookAgainSheet('Week of Mar 8',[{label:'Sunday prep',covers:'Sun–Wed'},{label:'Thursday prep',covers:'Thu–Sat'}])" style="width:100%;background:var(--dark);color:var(--cream);border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Cook this again</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+
+
+  <!-- ═══ TOOLTIP OVERLAY ═══ -->
+  <div id="tooltip-overlay" style="position:absolute;inset:0;z-index:401;pointer-events:none;display:none">
+    <!-- Backdrop for active tooltip -->
+    <div id="tooltip-backdrop" style="position:absolute;inset:0;background:rgba(30,18,8,.35);pointer-events:all" onclick="nextTooltip()"></div>
+
+    <!-- Tooltip card -->
+    <div id="tooltip-card" style="position:absolute;background:var(--cream);border-radius:16px;padding:14px 16px;max-width:260px;pointer-events:all;box-shadow:0 4px 24px rgba(0,0,0,.2);z-index:400">
+      <div id="tooltip-notch"></div>
+      <!-- Progress dots -->
+      <div id="tooltip-dots" style="display:flex;gap:4px;margin-bottom:8px"></div>
+      <div id="tooltip-title" style="font-size:14px;font-weight:600;color:var(--dark);margin-bottom:4px"></div>
+      <div id="tooltip-text" style="font-size:12px;color:var(--gray);line-height:1.55;margin-bottom:12px"></div>
+      <button onclick="nextTooltip()" style="background:var(--terra);color:var(--cream);border:none;border-radius:100px;padding:7px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Got it</button>
+    </div>
+  </div>
+</div><!-- /device -->
+
+<!-- OUTER CONTROLS -->
+<div class="outer">
+  <div class="label">Maui App Prototype — P1 Screens</div>
+  <button class="ctrl-btn" onclick="showTooltips()" style="background:rgba(232,101,42,.25);border-color:rgba(232,101,42,.4);color:#E8652A">▶ Show tooltips (Task 1)</button>
+  <div style="width:390px;background:rgba(232,101,42,.15);border:1px solid rgba(232,101,42,.3);border-radius:12px;padding:10px 14px;font-size:11px;color:rgba(250,246,240,.6);font-family:'DM Mono',monospace;letter-spacing:.3px">
+    🎯 FACILITATOR MODE — switch screens to guide tasks
+  </div>
+  <div style="width:390px;font-size:10px;color:rgba(250,246,240,.35);font-family:'DM Mono',monospace;letter-spacing:.5px;margin-top:4px">── HOME ──────────────────</div>
+  <button class="ctrl-btn active" onclick="showScreen('home')">🏠 Home (weekday) — Tasks 1,2,3,6</button>
+  <button class="ctrl-btn" onclick="showScreen('home-prep')">🍳 Home (prep day) — Task 5</button>
+  <div style="width:390px;font-size:10px;color:rgba(250,246,240,.35);font-family:'DM Mono',monospace;letter-spacing:.5px;margin-top:4px">── COOK MODE ─────────────</div>
+  <button class="ctrl-btn" onclick="showScreen('cook-overview')">👨‍🍳 Cook overview</button>
+  <button class="ctrl-btn" onclick="showScreen('cook-prep')">📋 Cook prep list</button>
+  <div style="width:390px;font-size:10px;color:rgba(250,246,240,.35);font-family:'DM Mono',monospace;letter-spacing:.5px;margin-top:4px">── CORE TABS ─────────────</div>
+  <button class="ctrl-btn" onclick="showScreen('plan')">📅 Plan — Tasks 7,10</button>
+  <button class="ctrl-btn" onclick="showScreen('groceries')">🛒 Groceries — Task 4</button>
+  <button class="ctrl-btn" onclick="showScreen('recipes')">📖 Recipes</button>
+  <button class="ctrl-btn" onclick="showScreen('recipe')">🥩 Recipe detail — Tasks 8,9</button>
+  <button class="ctrl-btn" onclick="showScreen('chat')">🐱 Maui chat</button>
+  <div style="width:390px;font-size:10px;color:rgba(250,246,240,.35);font-family:'DM Mono',monospace;letter-spacing:.5px;margin-top:4px">── SECONDARY ─────────────</div>
+  <button class="ctrl-btn" onclick="showScreen('streaks')">🔥 Streaks — Task 6</button>
+  <button class="ctrl-btn" onclick="showScreen('past-plans')">🕐 Past plans</button>
+  <button class="ctrl-btn" onclick="showScreen('settings')">⚙️ Settings</button>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ─── STATE ───
+const appState = {
+  currentScreen: 'screen-home',
+  screenHistory: ['screen-home'],
+  servings: 4,
+  groceryChecked: {},
+  chatMessages: [],
+  rating: 0,
+  checkedCount: 18,
+};
+
+// ─── GROCERY DATA ───
+const groceries = {
+  produce: [
+    {name:'Cucumber',qty:'2',recipe:'Korean BBQ'},
+    {name:'Spring onions',qty:'1 bunch',recipe:'Korean BBQ'},
+    {name:'Mango',qty:'2',recipe:'Overnight Oats'},
+    {name:'Lime',qty:'3',recipe:'Thai Basil'},
+    {name:'Thai basil',qty:'1 bunch',recipe:'Thai Basil'},
+  ],
+  proteins: [
+    {name:'Beef (thinly sliced)',qty:'1kg',recipe:'Korean BBQ + Tacos'},
+    {name:'Chicken breast',qty:'600g',recipe:'Thai Basil'},
+    {name:'Greek yogurt',qty:'500g',recipe:'Snack'},
+  ],
+  pantry: [
+    {name:'Jasmine rice',qty:'500g',recipe:'Korean BBQ'},
+    {name:'Soy sauce',qty:'1 bottle',recipe:'Korean BBQ'},
+    {name:'Gochujang paste',qty:'200g',recipe:'Korean BBQ'},
+    {name:'Sesame oil',qty:'1 bottle',recipe:'Korean BBQ'},
+    {name:'Oats (rolled)',qty:'400g',recipe:'Overnight Oats'},
+    {name:'Fish sauce',qty:'1 bottle',recipe:'Thai Basil'},
+  ],
+};
+
+// ─── NAVIGATION ───
+function goTo(screenId) {
+  const current = document.getElementById(appState.currentScreen);
+  const next = document.getElementById(screenId);
+  if (!next || screenId === appState.currentScreen) return;
+
+  current.classList.remove('active');
+  next.classList.add('active');
+  appState.screenHistory.push(screenId);
+  appState.currentScreen = screenId;
+  onScreenEnter(screenId);
+}
+
+function goBack() {
+  if (appState.screenHistory.length < 2) return;
+  appState.screenHistory.pop();
+  const prev = appState.screenHistory[appState.screenHistory.length - 1];
+  const current = document.getElementById(appState.currentScreen);
+  const prevEl = document.getElementById(prev);
+  current.classList.remove('active');
+  prevEl.classList.add('active');
+  appState.currentScreen = prev;
+}
+
+function switchTab(tab) {
+  const map = {
+    home:'screen-home', plan:'screen-plan',
+    groceries:'screen-groceries', recipes:'screen-recipes'
+  };
+  const target = map[tab];
+  if (target) {
+    appState.screenHistory = [target];
+    const current = document.getElementById(appState.currentScreen);
+    const next = document.getElementById(target);
+    current.classList.remove('active');
+    next.classList.add('active');
+    appState.currentScreen = target;
+    onScreenEnter(target);
+  }
+}
+
+function onScreenEnter(id) {
+  if (id === 'screen-groceries') buildGroceries();
+  if (id === 'screen-home') buildWeekStrip();
+  if (id === 'screen-home-prep') buildWeekStripPrep();
+  if (id === 'screen-cook-steps') initCookMode();
+  if (id === 'screen-cook-rate') initRatingScreen();
+}
+
+// Outer controls
+function showScreen(name) {
+  const map = {
+    'home':'screen-home','home-prep':'screen-home-prep',
+    'cook-overview':'screen-cook-overview','cook-prep':'screen-cook-prep','cook-steps':'screen-cook-steps',
+    'cook-done':'screen-cook-done','cook-rate':'screen-cook-rate',
+    'plan':'screen-plan','plan-gen':'screen-plan-gen',
+    'groceries':'screen-groceries','recipes':'screen-recipes',
+    'recipe':'screen-recipe','chat':'screen-chat',
+    'streaks':'screen-streaks','settings':'screen-settings','past-plans':'screen-past-plans',
+  };
+  document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  const target = map[name];
+  if (!target) return;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(target).classList.add('active');
+  appState.currentScreen = target;
+  appState.screenHistory = [target];
+  onScreenEnter(target);
+}
+
+// ─── WEEK STRIP ───
+function buildWeekStrip() {
+  // overridden below after selectDay is defined
+}
+function buildWeekStripPrep() {
+  const strip = document.getElementById('week-strip-prep');
+  if (!strip) return;
+  // Use selectedDay = 0 (Sunday = prep day) for prep day home
+  const savedDay = selectedDay;
+  selectedDay = 0;
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const nums = [22,23,24,25,26,27,28];
+  strip.innerHTML = '';
+  days.forEach((d,i) => {
+    const isPrep = PREP_DAYS.includes(i);
+    const isSelected = i === 0; // Sunday is today in prep day view
+    const sessionIdx = DAY_SESSION[i] !== undefined ? DAY_SESSION[i] : 0;
+    const col = SESSION_COLORS_APP[sessionIdx];
+    const hasMeals = i !== 6;
+    const pill = document.createElement('div');
+    pill.style.cssText = 'flex-shrink:0;width:44px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer';
+    const letter = document.createElement('div');
+    letter.className = 'day-letter';
+    letter.textContent = d;
+    letter.style.color = isPrep ? col.solid : 'var(--gray)';
+    letter.style.fontWeight = isPrep ? '600' : '500';
+    const num = document.createElement('div');
+    num.className = 'day-num';
+    num.textContent = nums[i];
+    if (isSelected) {
+      num.style.background = col.solid; num.style.color = '#F5F0E8';
+      num.style.boxShadow = '0 2px 8px rgba(0,0,0,.15)';
+    } else if (isPrep) {
+      num.style.background = col.solid; num.style.color = '#F5F0E8';
+      num.style.boxShadow = '0 2px 8px rgba(0,0,0,.15)';
+    } else if (hasMeals) {
+      num.style.background = col.light; num.style.color = col.solid;
+      num.style.border = '1.5px dashed ' + col.mid;
+    }
+    const dot = document.createElement('div');
+    dot.className = 'day-dot';
+    if (isPrep) dot.style.background = col.solid;
+    else if (hasMeals) dot.style.background = col.mid;
+    pill.appendChild(letter); pill.appendChild(num); pill.appendChild(dot);
+    strip.appendChild(pill);
+  });
+  selectedDay = savedDay;
+}
+
+// ─── GROCERIES ───
+function buildGroceries() {
+  buildGrocerySection('grocery-produce', groceries.produce);
+  buildGrocerySection('grocery-proteins', groceries.proteins);
+  buildGrocerySection('grocery-pantry', groceries.pantry);
+  updateOrderCount();
+}
+
+function buildGrocerySection(elId, items) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML = '';
+  items.forEach((item, i) => {
+    const key = elId + i;
+    if (!(key in appState.groceryChecked)) appState.groceryChecked[key] = true;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border)';
+    if (i === items.length - 1) row.style.borderBottom = 'none';
+    const checked = appState.groceryChecked[key];
+    row.innerHTML = `
+      <div onclick="toggleGrocery('${key}', this)" style="width:20px;height:20px;border-radius:5px;border:1.5px solid ${checked ? 'var(--green)' : 'var(--border)'};background:${checked ? 'var(--green)' : 'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s">
+        ${checked ? '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+      </div>
+      <div style="flex:1;opacity:${checked ? '1' : '0.4'}">
+        <div style="font-size:13px;color:var(--dark)">${item.name}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:1px">${item.recipe}</div>
+      </div>
+      <div style="font-size:12px;color:var(--gray);opacity:${checked ? '1' : '0.4'}">${item.qty}</div>`;
+    el.appendChild(row);
+  });
+}
+
+function toggleGrocery(key, checkEl) {
+  appState.groceryChecked[key] = !appState.groceryChecked[key];
+  buildGroceries();
+}
+
+function updateOrderCount() {
+  const total = Object.values(appState.groceryChecked).filter(Boolean).length;
+  appState.checkedCount = total;
+  const el = document.getElementById('order-count');
+  if (el) el.textContent = `Order ${total} groceries`;
+}
+
+// ─── RECIPE ───
+function changeSrv(delta) {
+  const el = document.getElementById('srv-count');
+  if (!el) return;
+  appState.servings = Math.max(1, Math.min(8, appState.servings + delta));
+  el.textContent = appState.servings;
+}
+
+function switchRecipeTab(tab, el) {
+  document.querySelectorAll('#tab-ingredients,#tab-instructions,#tab-nutrition').forEach(t => t.style.display = 'none');
+  document.querySelectorAll('#recipe-tab-bar .tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).style.display = 'block';
+  el.classList.add('active');
+}
+
+// ─── RATING ───
+function showRating() {
+  const modal = document.getElementById('rating-modal');
+  modal.style.display = 'flex';
+}
+function closeRating() {
+  document.getElementById('rating-modal').style.display = 'none';
+}
+function setRating(n) {
+  appState.rating = n;
+  document.querySelectorAll('#rating-stars .star').forEach((s,i) => {
+    s.classList.toggle('active', i < n);
+  });
+}
+
+// ─── COOK MODE STATE MACHINE ───
+const COOK_RECIPES = [
+  {
+    name: 'Korean BBQ Beef Bowl', emoji: '🥩',
+    steps: [
+      {
+        title: 'Marinate the beef',
+        body: 'Combine 500g thinly sliced beef with 3 tbsp soy sauce, 1 tbsp sesame oil, 2 tbsp brown sugar, 4 cloves minced garlic, and 1 tsp ginger. Mix well and set aside for at least 20 minutes.',
+        ingredients: '500g beef (thinly sliced)\nSoy sauce · Sesame oil · Brown sugar\n4 cloves garlic · 1 tsp ginger',
+        tip: '⏱ Marinate for 20 min minimum — start this while you prep the next recipe',
+      },
+      {
+        title: 'Cook the rice',
+        body: 'Rinse 320g jasmine rice until the water runs clear. Add to a pot with 400ml cold water. Bring to a boil, then reduce to the lowest heat, cover, and cook for 12 minutes. Remove from heat and rest covered for 5 minutes.',
+        ingredients: '320g jasmine rice · 400ml water',
+        tip: '🐱 Don\'t lift the lid while it\'s resting — the steam finishes the job',
+      },
+      {
+        title: 'Sear the beef',
+        body: 'Heat a wok or heavy pan over high heat until smoking. Add 1 tbsp neutral oil. Cook the marinated beef in two batches — don\'t crowd the pan. 2–3 minutes per batch, stirring occasionally, until caramelised and slightly charred at the edges.',
+        ingredients: '1 tbsp neutral oil',
+        tip: '🔥 High heat is everything here — if the pan isn\'t smoking, the beef will steam instead of sear',
+      },
+      {
+        title: 'Make the garnish',
+        body: 'Thinly slice 1 cucumber and 4 spring onion stalks. In a small bowl, mix 1 tbsp rice vinegar with a pinch of sugar and toss the cucumber through it. This quick pickle brightens the whole bowl.',
+        ingredients: '1 cucumber · 4 spring onion stalks\n1 tbsp rice vinegar · pinch sugar',
+        tip: null,
+      },
+      {
+        title: 'Assemble and store',
+        body: 'Divide rice into 4 containers. Top each with beef, pickled cucumber, spring onions, and a drizzle of sesame oil. Leave the lids off until fully cooled before sealing and refrigerating.',
+        ingredients: '4 airtight containers · sesame oil to finish',
+        tip: '🐱 Cool before sealing — warm containers create condensation and make everything soggy',
+      },
+    ],
+  },
+  {
+    name: 'Thai Basil Chicken', emoji: '🍜',
+    steps: [
+      {
+        title: 'Prep your ingredients',
+        body: 'Slice 600g chicken breast into thin strips. Mince 4 cloves garlic and 2 red chillies. Wash and dry 1 bunch Thai basil — you\'ll add it right at the end. Measure out your sauce ingredients so everything\'s ready to go.',
+        ingredients: '600g chicken breast · 4 cloves garlic\n2 red chillies · 1 bunch Thai basil',
+        tip: '🐱 Have everything prepped before the pan goes on — this dish cooks in under 6 minutes',
+      },
+      {
+        title: 'Mix the sauce',
+        body: 'In a small bowl, combine 1.5 tbsp fish sauce, 1 tbsp oyster sauce, 1 tbsp soy sauce, and 1 tsp sugar. Stir until the sugar dissolves. This is the whole flavour base — taste it before it goes in.',
+        ingredients: '1.5 tbsp fish sauce · 1 tbsp oyster sauce\n1 tbsp soy sauce · 1 tsp sugar',
+        tip: null,
+      },
+      {
+        title: 'Stir-fry the chicken',
+        body: 'Heat wok over high heat with 1 tbsp oil. Add garlic and chilli, stir-fry 30 seconds until fragrant. Add chicken and cook 4–5 minutes, stirring constantly. Pour in the sauce and toss to coat. Remove from heat and fold in the basil leaves — they wilt in the residual heat.',
+        ingredients: '1 tbsp neutral oil',
+        tip: '🔥 Add the basil off the heat — it turns black and bitter if it fries',
+      },
+      {
+        title: 'Portion and store',
+        body: 'Let cool slightly (5 minutes), then divide into 3 containers. This keeps well for 4 days in the fridge. Reheat in a hot pan for 2 minutes rather than the microwave — it crisps back up much better.',
+        ingredients: '3 airtight containers',
+        tip: '🐱 Pan reheat > microwave for this one — trust me',
+      },
+    ],
+  },
+  {
+    name: 'Overnight Oats × 4', emoji: '🥣',
+    steps: [
+      {
+        title: 'Mix your oats',
+        body: 'For each of the 4 portions, combine 80g rolled oats, 200ml milk (or oat milk), 1 tbsp chia seeds, 1 tsp honey, and ½ tsp vanilla extract. Mix well in a large bowl, then divide into 4 jars or containers.',
+        ingredients: '320g rolled oats · 800ml milk\n4 tbsp chia seeds · 4 tsp honey · vanilla',
+        tip: null,
+      },
+      {
+        title: 'Top and refrigerate',
+        body: 'Slice ½ a mango and divide across the 4 jars. Seal lids and refrigerate overnight — minimum 6 hours. In the morning, give them a stir and eat cold, or microwave 60 seconds if you prefer warm.',
+        ingredients: '1 mango · 4 jars with lids',
+        tip: '🐱 These keep for 4 days — prep them all now and breakfast is handled through Thursday',
+      },
+    ],
+  },
+];
+
+let cookRecipeIdx = 0;
+let cookStepIdx = 0;
+let ratingIdx = 0;
+
+function initCookMode() {
+  cookRecipeIdx = 0;
+  cookStepIdx = 0;
+  renderCookStep();
+}
+
+function renderCookStep() {
+  const recipe = COOK_RECIPES[cookRecipeIdx];
+  const step = recipe.steps[cookStepIdx];
+  const totalSteps = recipe.steps.length;
+
+  // Header
+  document.getElementById('cook-recipe-label').textContent = recipe.name;
+  document.getElementById('cook-step-counter').textContent = 'Step ' + (cookStepIdx + 1) + ' of ' + totalSteps;
+
+  // Progress bars
+  const bars = document.getElementById('cook-progress-bars');
+  bars.innerHTML = recipe.steps.map((_, i) =>
+    '<div style="height:3px;flex:1;border-radius:2px;background:' +
+    (i < cookStepIdx ? 'rgba(250,246,240,.6)' : i === cookStepIdx ? 'var(--terra)' : 'rgba(250,246,240,.15)') +
+    '"></div>'
+  ).join('');
+
+  // Last step on last recipe button label
+  const isLastStep = cookStepIdx === totalSteps - 1;
+  const isLastRecipe = cookRecipeIdx === COOK_RECIPES.length - 1;
+  const btn = document.getElementById('cook-next-btn');
+  if (isLastStep && isLastRecipe) {
+    btn.textContent = 'Finish session ✓';
+  } else if (isLastStep) {
+    btn.textContent = 'Recipe done →';
+  } else {
+    btn.textContent = 'Next step →';
+  }
+
+  // Body
+  const body = document.getElementById('cook-step-body');
+  body.innerHTML =
+    '<div style="font-size:12px;color:var(--orange);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Step ' + (cookStepIdx + 1) + '</div>' +
+    '<div style="font-family:\'Playfair Display\',serif;font-size:22px;color:var(--cream);margin-bottom:16px;line-height:1.3">' + step.title + '</div>' +
+    '<div style="font-size:15px;color:rgba(250,246,240,.75);line-height:1.7;margin-bottom:24px">' + step.body + '</div>' +
+    '<div style="background:rgba(250,246,240,.06);border-radius:16px;padding:14px;margin-bottom:' + (step.tip ? '16px' : '0') + '">' +
+      '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:rgba(250,246,240,.4);margin-bottom:10px">For this step</div>' +
+      '<div style="font-size:13px;color:rgba(250,246,240,.7);line-height:1.8">' + step.ingredients.replace(/\n/g,'<br>') + '</div>' +
+    '</div>' +
+    (step.tip ? '<div style="background:rgba(232,101,42,.15);border-radius:12px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:0"><span style="font-size:18px;flex-shrink:0;margin-top:1px">🐱</span><div style="font-size:13px;color:var(--orange);line-height:1.6">' + step.tip.replace(/^[^\s]+\s/, '') + '</div></div>' : '');
+
+  // Scroll back to top
+  const scroll = document.querySelector('#screen-cook-steps .screen-scroll');
+  if (scroll) scroll.scrollTop = 0;
+}
+
+function nextCookStep() {
+  const recipe = COOK_RECIPES[cookRecipeIdx];
+  if (cookStepIdx < recipe.steps.length - 1) {
+    cookStepIdx++;
+    renderCookStep();
+  } else if (cookRecipeIdx < COOK_RECIPES.length - 1) {
+    // Show recipe transition overlay
+    const nextRecipe = COOK_RECIPES[cookRecipeIdx + 1];
+    const metaMap = ['4 steps · ~30 min', '2 steps · ~5 min'];
+    document.getElementById('rt-done-name').textContent = recipe.name;
+    document.getElementById('rt-next-emoji').textContent = nextRecipe.emoji;
+    document.getElementById('rt-next-name').textContent = nextRecipe.name;
+    document.getElementById('rt-next-meta').textContent = metaMap[cookRecipeIdx] || '';
+    const overlay = document.getElementById('recipe-transition');
+    overlay.style.display = 'flex';
+  } else {
+    goTo('screen-cook-done');
+  }
+}
+
+function startNextRecipe() {
+  cookRecipeIdx++;
+  cookStepIdx = 0;
+  document.getElementById('recipe-transition').style.display = 'none';
+  renderCookStep();
+}
+
+function prevCookStep() {
+  if (cookStepIdx > 0) {
+    cookStepIdx--;
+    renderCookStep();
+  } else if (cookRecipeIdx > 0) {
+    cookRecipeIdx--;
+    cookStepIdx = COOK_RECIPES[cookRecipeIdx].steps.length - 1;
+    renderCookStep();
+  } else {
+    goBack();
+  }
+}
+
+// ─── COOK MODE RATING SCREEN ───
+const RATE_RECIPES = [
+  { name: 'How was the Korean BBQ bowl?', emoji: '🥩' },
+  { name: 'And the Thai Basil Chicken?', emoji: '🍜' },
+  { name: 'How about the Overnight Oats?', emoji: '🥣' },
+];
+
+function initRatingScreen() {
+  ratingIdx = 0;
+  renderRatingScreen();
+}
+
+function renderRatingScreen() {
+  const r = RATE_RECIPES[ratingIdx];
+  document.getElementById('rate-emoji').textContent = r.emoji;
+  document.getElementById('rate-recipe-name').textContent = r.name;
+  document.getElementById('rate-screen-sub').textContent = 'Recipe ' + (ratingIdx + 1) + ' of ' + RATE_RECIPES.length;
+  document.getElementById('rate-text').value = '';
+
+  // Reset pills
+  document.querySelectorAll('.rate-pill').forEach(p => p.classList.remove('selected'));
+
+  // Progress dots
+  const dots = document.getElementById('rate-progress-dots');
+  dots.innerHTML = RATE_RECIPES.map((_, i) =>
+    '<div style="width:' + (i === ratingIdx ? '20px' : '6px') + ';height:6px;border-radius:3px;background:' +
+    (i < ratingIdx ? 'var(--green)' : i === ratingIdx ? 'var(--terra)' : 'var(--border)') +
+    ';transition:all .3s"></div>'
+  ).join('');
+
+  // Button label
+  const btn = document.getElementById('rate-next-btn');
+  btn.textContent = ratingIdx < RATE_RECIPES.length - 1 ? 'Tell Maui →' : 'Done ✓';
+}
+
+function selectRatePill(el) {
+  document.querySelectorAll('.rate-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function nextRating() {
+  if (ratingIdx < RATE_RECIPES.length - 1) {
+    ratingIdx++;
+    renderRatingScreen();
+    const scroll = document.querySelector('#screen-cook-rate .screen-scroll');
+    if (scroll) scroll.scrollTop = 0;
+  } else {
+    goTo('screen-home');
+  }
+}
+
+// ─── CHAT ───
+function sendSuggestion(el) {
+  const text = el.textContent;
+  el.closest('#chat-pills').style.display = 'none';
+  addChatMsg(text, 'user');
+  setTimeout(() => {
+    addTypingIndicator();
+    setTimeout(() => {
+      removeTypingIndicator();
+      const replies = {
+        'Swap tonight\'s dinner': 'Sure! What are you in the mood for — something lighter, spicier, or a completely different cuisine? I can pull a few options that match your taste profile 🐱',
+        'I\'m bored of chicken': 'Totally get it. How about we swap in some Korean beef, lemongrass pork, or go full plant-based with a tofu dish? All high protein, all actually delicious.',
+        'Make next week spicier': 'Love that energy 🌶️ I\'ll bump up the heat on next week\'s plan — more gochujang, more Thai chilli, more of the good stuff. Confirming?',
+        'Add something high protein': 'On it. I can add a Greek yogurt snack (20g protein, 5 min) or swap a meal for something beefier. Which would you prefer?',
+      };
+      const reply = replies[text] || 'On it! Let me check what works best with your current plan and taste profile 🐱';
+      addChatMsg(reply, 'maui');
+    }, 1200);
+  }, 400);
+}
+
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  document.getElementById('chat-pills').style.display = 'none';
+  addChatMsg(text, 'user');
+  setTimeout(() => {
+    addTypingIndicator();
+    setTimeout(() => {
+      removeTypingIndicator();
+      addChatMsg("Got it! Let me think about that for your plan this week 🐱 I'll look at what fits your taste profile and goal.", 'maui');
+    }, 1400);
+  }, 400);
+}
+
+function addChatMsg(text, from) {
+  const scroll = document.getElementById('chat-messages');
+  const row = document.createElement('div');
+  row.className = 'chat-row' + (from === 'user' ? ' user-row' : '');
+  if (from === 'maui') {
+    const av = document.createElement('div');
+    av.className = 'chat-avatar-sm'; av.textContent = '🐱';
+    row.appendChild(av);
+  }
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble ' + (from === 'maui' ? 'maui' : 'user');
+  bubble.textContent = text;
+  row.appendChild(bubble);
+  scroll.appendChild(row);
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+function addTypingIndicator() {
+  const scroll = document.getElementById('chat-messages');
+  const row = document.createElement('div');
+  row.className = 'chat-row'; row.id = 'typing-row';
+  const av = document.createElement('div');
+  av.className = 'chat-avatar-sm'; av.textContent = '🐱';
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble maui';
+  bubble.innerHTML = '<span style="display:flex;gap:3px;padding:2px 0"><span style="animation:bounce .6s infinite;display:inline-block">·</span><span style="animation:bounce .6s .15s infinite;display:inline-block">·</span><span style="animation:bounce .6s .3s infinite;display:inline-block">·</span></span>';
+  row.appendChild(av); row.appendChild(bubble);
+  scroll.appendChild(row);
+  scroll.scrollTop = scroll.scrollHeight;
+}
+function removeTypingIndicator() {
+  const t = document.getElementById('typing-row');
+  if (t) t.remove();
+}
+
+// CSS animation 
+// ─── MISSING FUNCTIONS (sheet/modal/day logic) ───
+
+// Sheet functions
+function showSwapSheet() { document.getElementById('swap-sheet').style.display='flex'; }
+function closeSwapSheet() {
+  document.getElementById('swap-sheet').style.display='none';
+  document.querySelectorAll('.swap-option').forEach(o=>{
+    o.style.borderColor='var(--border)';o.style.background='var(--white)';
+    const r=o.querySelector('.swap-radio');if(r){r.style.background='transparent';r.style.borderColor='var(--border)';}
+  });
+  const btn=document.getElementById('confirm-swap-btn');
+  if(btn){btn.style.background='var(--border)';btn.style.color='var(--gray)';btn.disabled=true;}
+}
+function selectSwap(el) {
+  document.querySelectorAll('.swap-option').forEach(o=>{
+    o.style.borderColor='var(--border)';o.style.background='var(--white)';
+    const r=o.querySelector('.swap-radio');if(r){r.style.background='transparent';r.style.borderColor='var(--border)';}
+  });
+  el.style.borderColor='var(--terra)';el.style.background='var(--terra-light)';
+  const radio=el.querySelector('.swap-radio');
+  if(radio){radio.style.background='var(--terra)';radio.style.borderColor='var(--terra)';}
+  const btn=document.getElementById('confirm-swap-btn');
+  if(btn){btn.style.background='var(--dark)';btn.style.color='var(--cream)';btn.disabled=false;}
+}
+function swapPillTap(el){el.style.background='var(--terra-light)';el.style.borderColor='var(--terra)';el.style.color='var(--terra)';}
+function showPastPlans(){goTo('screen-past-plans');}
+function closePastPlans(){goBack();}
+function showGroceryProvider(){document.getElementById('grocery-provider-sheet').style.display='flex';}
+function closeGroceryProvider(){document.getElementById('grocery-provider-sheet').style.display='none';}
+function showGroceryAdd(){document.getElementById('grocery-add-sheet').style.display='flex';setTimeout(()=>{const i=document.getElementById('grocery-add-input');if(i)i.focus();},100);}
+function closeGroceryAdd(){document.getElementById('grocery-add-sheet').style.display='none';}
+function clearAllGroceries(){Object.keys(appState.groceryChecked).forEach(k=>appState.groceryChecked[k]=false);buildGroceries();}
+function switchPastPlans(view, pill) {
+  document.getElementById('past-plans-saved').style.display = view === 'saved' ? 'block' : 'none';
+  document.getElementById('past-plans-all').style.display = view === 'all' ? 'block' : 'none';
+  const pills = ['pill-saved','pill-all'];
+  pills.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.background = 'var(--white)';
+    el.style.border = '1px solid var(--border)';
+    el.style.color = 'var(--gray)';
+  });
+  pill.style.background = 'var(--dark)';
+  pill.style.border = '1px solid var(--dark)';
+  pill.style.color = 'var(--cream)';
+}
+function selectReaction(el){document.querySelectorAll('#rating-modal .reaction').forEach(r=>r.classList.remove('selected'));el.classList.add('selected');}
+
+// Day meals data
+const dayMeals = {
+  0:[{emoji:'🥣',type:'Breakfast',name:'Overnight Oats with Mango',meta:'Sweet · 5 min · 420 cal'},{emoji:'🥩',type:'Lunch',name:'Korean BBQ Beef Bowl',meta:'Spicy · 42g protein · 580 cal'},{emoji:'🍜',type:'Dinner',name:'Thai Basil Chicken Bowl',meta:'Spicy · 38g protein · 540 cal'}],
+  1:[{emoji:'🥣',type:'Breakfast',name:'Overnight Oats with Mango',meta:'Sweet · 5 min · 420 cal'},{emoji:'🥩',type:'Lunch',name:'Korean BBQ Beef Bowl',meta:'Spicy · 42g protein · 580 cal'},{emoji:'🍜',type:'Dinner',name:'Thai Basil Chicken Bowl',meta:'Spicy · 38g protein · 540 cal'},{emoji:'🥛',type:'Snack',name:'Greek Yogurt + Honey',meta:'Quick · 20g protein · 180 cal'}],
+  2:[{emoji:'🥣',type:'Breakfast',name:'Overnight Oats with Mango',meta:'Sweet · 5 min · 420 cal'},{emoji:'🥩',type:'Lunch',name:'Korean BBQ Beef Bowl',meta:'Spicy · 42g protein · 580 cal'},{emoji:'🍜',type:'Dinner',name:'Thai Basil Chicken Bowl',meta:'Spicy · 38g protein · 540 cal'}],
+  3:[{emoji:'🥣',type:'Breakfast',name:'Overnight Oats with Mango',meta:'Sweet · 5 min · 420 cal'},{emoji:'🌮',type:'Lunch',name:'Spicy Korean Beef Tacos',meta:'Spicy · 35g protein · 520 cal'},{emoji:'🍜',type:'Dinner',name:'Thai Basil Chicken Bowl',meta:'Spicy · 42g protein · 580 cal'},{emoji:'🥛',type:'Snack',name:'Greek Yogurt + Honey',meta:'Quick · 20g protein · 180 cal'}],
+  4:[{emoji:'🥣',type:'Breakfast',name:'Chia Seed Pudding',meta:'Sweet · 5 min · 380 cal'},{emoji:'🌮',type:'Lunch',name:'Spicy Korean Beef Tacos',meta:'Spicy · 35g protein · 520 cal'},{emoji:'🥗',type:'Dinner',name:'Vietnamese Lemongrass Tofu',meta:'Fresh · 28g protein · 490 cal'}],
+  5:[{emoji:'🥣',type:'Breakfast',name:'Chia Seed Pudding',meta:'Sweet · 5 min · 380 cal'},{emoji:'🌮',type:'Lunch',name:'Spicy Korean Beef Tacos',meta:'Spicy · 35g protein · 520 cal'},{emoji:'🥗',type:'Dinner',name:'Vietnamese Lemongrass Tofu',meta:'Fresh · 28g protein · 490 cal'}],
+  6:[],
+};
+
+let selectedDay = 0;
+
+// Session color system — matches onboarding exactly
+const SESSION_COLORS_APP = [
+  { solid:'#C4845A', light:'#FDF6F1', mid:'#E8C4A8' },  // terracotta — session 0
+  { solid:'#4A7BA7', light:'#EBF3FB', mid:'#A8C8E8' },  // blue — session 1
+  { solid:'#7A9E7E', light:'#EAF3DE', mid:'#B8D8BC' },  // green — session 2
+  { solid:'#C9A84C', light:'#FDF9EE', mid:'#E8D8A8' },  // amber — session 3
+];
+
+// ─── COOK AGAIN SHEET ───
+const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAYS_FULL  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+let cookAgainSelectedDays = [];
+let caActivePanelDay = null;
+let caSessionHorizons = {};
+
+function caGetSessionColor(idx) { return SESSION_COLORS_APP[idx % SESSION_COLORS_APP.length]; }
+function caGetSessionHorizon(dayIdx) { return caSessionHorizons[dayIdx] !== undefined ? caSessionHorizons[dayIdx] : 4; }
+function caGetSessionMaxDays(dayIdx) {
+  const sorted = [...cookAgainSelectedDays].sort((a,b)=>a-b);
+  const pos = sorted.indexOf(dayIdx);
+  const next = sorted[pos + 1];
+  return next !== undefined ? next - dayIdx : 7 - dayIdx;
+}
+
+function showCookAgainSheet(weekLabel, sessions) {
+  const pps = document.getElementById('past-plans-sheet');
+  if (pps) pps.style.display = 'none';
+  document.getElementById('cook-again-week').textContent = weekLabel;
+  const sessionColors = ['#C4845A','#4A7BA7','#7A9E7E'];
+  document.getElementById('cook-again-sessions').innerHTML = sessions.map((s,i) =>
+    '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--dark)">' +
+    '<div style="width:10px;height:10px;border-radius:50%;background:' + (sessionColors[i]||sessionColors[0]) + ';flex-shrink:0"></div>' +
+    '<span>' + s.label + ' · covered ' + s.covers + '</span></div>'
+  ).join('');
+  cookAgainSelectedDays = [];
+  caSessionHorizons = {};
+  caActivePanelDay = null;
+  document.getElementById('cook-again-picker').style.display = 'none';
+  document.getElementById('cook-again-confirm-btn').style.display = 'none';
+  const cb = document.getElementById('cook-again-change-btn');
+  cb.style.background = 'var(--white)'; cb.style.borderColor = 'var(--border)'; cb.style.color = 'var(--dark)';
+  document.getElementById('cook-again-sheet').style.display = 'flex';
+}
+
+function closeCookAgainSheet() { document.getElementById('cook-again-sheet').style.display = 'none'; }
+function cookAgainSameWay() { closeCookAgainSheet(); goTo('screen-plan'); }
+
+function toggleCookAgainPicker() {
+  const picker = document.getElementById('cook-again-picker');
+  const btn = document.getElementById('cook-again-change-btn');
+  const confirmBtn = document.getElementById('cook-again-confirm-btn');
+  const isOpen = picker.style.display !== 'none';
+  if (isOpen) {
+    picker.style.display = 'none'; confirmBtn.style.display = 'none';
+    btn.style.background = 'var(--white)'; btn.style.borderColor = 'var(--border)'; btn.style.color = 'var(--dark)';
+  } else {
+    picker.style.display = 'block'; confirmBtn.style.display = 'block';
+    btn.style.background = 'var(--terra-light)'; btn.style.borderColor = 'var(--terra)'; btn.style.color = 'var(--terra)';
+    buildCookAgainDayStrip();
+  }
+}
+
+function buildCookAgainDayStrip() {
+  const strip = document.getElementById('cook-again-day-strip');
+  if (!strip) return;
+  strip.innerHTML = '';
+  DAYS_SHORT.forEach((day, i) => {
+    const cell = document.createElement('div');
+    cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer';
+    const letter = document.createElement('div');
+    letter.style.cssText = 'font-size:9px;font-weight:500;text-transform:uppercase;transition:color .2s';
+    letter.id = 'ca-letter-' + i; letter.textContent = day;
+    const num = document.createElement('div');
+    num.style.cssText = 'width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;transition:all .2s';
+    num.id = 'ca-num-' + i; num.textContent = i + 1;
+    const dot = document.createElement('div');
+    dot.style.cssText = 'width:5px;height:5px;border-radius:50%;transition:background .2s';
+    dot.id = 'ca-dot-' + i;
+    cell.appendChild(letter); cell.appendChild(num); cell.appendChild(dot);
+    cell.onclick = () => toggleCookAgainDay(i);
+    strip.appendChild(cell);
+  });
+  renderCookAgainStrip();
+}
+
+function renderCookAgainStrip() {
+  const sorted = [...cookAgainSelectedDays].sort((a,b)=>a-b);
+  const covMap = {};
+  sorted.forEach((prepDay, si) => {
+    const horizon = Math.min(caGetSessionHorizon(prepDay), caGetSessionMaxDays(prepDay));
+    for (let d = 0; d < horizon && prepDay+d <= 6; d++) {
+      if (!covMap[prepDay+d]) covMap[prepDay+d] = { si, isPrepDay: d===0 };
+    }
+  });
+  DAYS_SHORT.forEach((_, i) => {
+    const letter = document.getElementById('ca-letter-'+i);
+    const num    = document.getElementById('ca-num-'+i);
+    const dot    = document.getElementById('ca-dot-'+i);
+    if (!letter||!num||!dot) return;
+    const entry = covMap[i];
+    if (entry) {
+      const col = caGetSessionColor(entry.si);
+      letter.style.color = col.solid; letter.style.fontWeight = '600';
+      dot.style.background = entry.isPrepDay ? col.solid : col.mid;
+      if (entry.isPrepDay) {
+        num.style.background = col.solid; num.style.color = '#F5F0E8';
+        num.style.border = 'none'; num.style.boxShadow = '0 2px 8px rgba(0,0,0,.15)'; num.style.fontWeight = '600';
+      } else {
+        num.style.background = col.light; num.style.color = col.solid;
+        num.style.border = '1.5px dashed '+col.mid; num.style.boxShadow = 'none'; num.style.fontWeight = '500';
+      }
+    } else {
+      letter.style.color = 'var(--gray)'; letter.style.fontWeight = '500';
+      num.style.background = 'var(--white)'; num.style.color = 'var(--dark)';
+      num.style.border = '1.5px solid var(--border)'; num.style.boxShadow = 'none'; num.style.fontWeight = '500';
+      dot.style.background = 'transparent';
+    }
+  });
+  renderCACoverageSummary();
+}
+
+function toggleCookAgainDay(idx) {
+  if (cookAgainSelectedDays.includes(idx)) {
+    if (caActivePanelDay === idx) {
+      cookAgainSelectedDays = cookAgainSelectedDays.filter(x => x !== idx);
+      delete caSessionHorizons[idx];
+      caClosePanelDay();
+    } else { caOpenPanelDay(idx); }
+  } else {
+    cookAgainSelectedDays.push(idx);
+    const sorted = [...cookAgainSelectedDays].sort((a,b)=>a-b);
+    const pos = sorted.indexOf(idx);
+    const nextPrep = sorted[pos+1];
+    const maxDays = nextPrep !== undefined ? nextPrep - idx : 7 - idx;
+    caSessionHorizons[idx] = Math.min(4, maxDays);
+    if (pos > 0) {
+      const prevPrep = sorted[pos-1];
+      const prevMax = idx - prevPrep;
+      if ((caSessionHorizons[prevPrep]||4) > prevMax) caSessionHorizons[prevPrep] = prevMax;
+    }
+    caOpenPanelDay(idx);
+  }
+  renderCookAgainStrip();
+}
+
+function caAdjustHorizon(delta, dayIdx) {
+  caSessionHorizons[dayIdx] = Math.min(caGetSessionMaxDays(dayIdx), Math.max(1, caGetSessionHorizon(dayIdx)+delta));
+  caOpenPanelDay(dayIdx);
+  renderCookAgainStrip();
+}
+
+function caOpenPanelDay(dayIdx) {
+  caActivePanelDay = dayIdx;
+  const panel = document.getElementById('ca-session-panel');
+  if (!panel) return;
+  const sorted = [...cookAgainSelectedDays].sort((a,b)=>a-b);
+  const si = sorted.indexOf(dayIdx);
+  const col = caGetSessionColor(si);
+  const horizon = Math.min(caGetSessionHorizon(dayIdx), caGetSessionMaxDays(dayIdx));
+  const maxDays = caGetSessionMaxDays(dayIdx);
+  const coverDays = [];
+  for (let d = 0; d < horizon && dayIdx+d <= 6; d++) coverDays.push(DAYS_SHORT[dayIdx+d]);
+  panel.style.display = 'block';
+  panel.style.border = '1.5px solid '+col.solid;
+  panel.style.background = col.light;
+  panel.innerHTML =
+    '<div style="display:flex;align-items:center;gap:8px;padding:12px 14px 8px">' +
+      '<span style="width:10px;height:10px;border-radius:50%;background:'+col.solid+';flex-shrink:0"></span>' +
+      '<span style="font-size:14px;font-weight:600;color:'+col.solid+'">'+DAYS_FULL[dayIdx]+' session</span>' +
+    '</div>' +
+    '<div style="height:1px;background:'+col.mid+';margin:0 14px"></div>' +
+    '<div style="padding:10px 14px">' +
+      '<div style="font-size:12px;color:var(--gray);margin-bottom:10px">How many days should this session cover? <span style="color:'+col.solid+';font-weight:500">(max '+maxDays+')</span></div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between">' +
+        '<button onclick="caAdjustHorizon(-1,'+dayIdx+')" style="width:36px;height:36px;border-radius:50%;border:1.5px solid '+col.mid+';background:var(--white);font-size:18px;cursor:pointer;color:'+col.solid+';display:flex;align-items:center;justify-content:center;font-family:sans-serif">&#8722;</button>' +
+        '<div style="text-align:center"><div style="font-size:28px;font-weight:600;color:'+col.solid+'">'+horizon+'</div><div style="font-size:11px;color:var(--gray)">'+(horizon===1?'day':'days')+'</div></div>' +
+        '<button onclick="caAdjustHorizon(1,'+dayIdx+')" style="width:36px;height:36px;border-radius:50%;border:1.5px solid '+col.mid+';background:var(--white);font-size:18px;cursor:pointer;color:'+col.solid+';display:flex;align-items:center;justify-content:center;font-family:sans-serif">+</button>' +
+      '</div>' +
+    '</div>' +
+    '<div style="padding:0 14px 12px;font-size:12px;color:'+col.solid+';font-weight:500;text-align:center">Covers '+coverDays.join(', ')+'</div>';
+}
+
+function caClosePanelDay() {
+  caActivePanelDay = null;
+  const panel = document.getElementById('ca-session-panel');
+  if (panel) panel.style.display = 'none';
+}
+
+function renderCACoverageSummary() {
+  const el = document.getElementById('ca-coverage-summary');
+  if (!el) return;
+  el.innerHTML = '';
+  const sorted = [...cookAgainSelectedDays].sort((a,b)=>a-b);
+  sorted.forEach((prepDay, si) => {
+    const col = caGetSessionColor(si);
+    const horizon = Math.min(caGetSessionHorizon(prepDay), caGetSessionMaxDays(prepDay));
+    const coverDays = [];
+    for (let d = 0; d < horizon && prepDay+d <= 6; d++) coverDays.push(DAYS_SHORT[prepDay+d]);
+    const line = document.createElement('div');
+    line.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:4px';
+    line.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:'+col.solid+';flex-shrink:0"></div>' +
+      '<span style="color:'+col.solid+';font-weight:600">'+DAYS_FULL[prepDay]+'</span>' +
+      '<span style="color:var(--gray)">covers '+coverDays.join(', ')+'</span>';
+    el.appendChild(line);
+  });
+  const confirmBtn = document.getElementById('cook-again-confirm-btn');
+  if (confirmBtn) { confirmBtn.style.opacity = sorted.length===0?'.4':'1'; confirmBtn.disabled = sorted.length===0; }
+}
+
+function cookAgainConfirm() {
+  if (cookAgainSelectedDays.length === 0) return;
+  closeCookAgainSheet();
+  goTo('screen-plan');
+}
+
+// Day → session mapping: Sun(0)=prep0, Mon-Wed(1-3)=session0 eating, Thu(4)=prep1, Fri-Sat(5-6)=session1 eating
+const DAY_SESSION = { 0:0, 1:0, 2:0, 3:0, 4:1, 5:1, 6:1 };
+const PREP_DAYS = [0, 4];
+
+function selectDay(dayIdx) {
+  selectedDay = dayIdx;
+  const strip = document.getElementById('week-strip');
+  if (!strip) return;
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const nums = [22,23,24,25,26,27,28];
+  strip.innerHTML = '';
+  days.forEach((d,i) => {
+    const isPrep = PREP_DAYS.includes(i);
+    const isSelected = i === selectedDay;
+    const sessionIdx = DAY_SESSION[i] !== undefined ? DAY_SESSION[i] : 0;
+    const col = SESSION_COLORS_APP[sessionIdx];
+    const hasMeals = i !== 6; // Sat flexible
+
+    const pill = document.createElement('div');
+    pill.className = 'day-pill';
+    pill.style.cursor = 'pointer';
+    pill.style.flexShrink = '0';
+    pill.style.width = '44px';
+    pill.style.display = 'flex';
+    pill.style.flexDirection = 'column';
+    pill.style.alignItems = 'center';
+    pill.style.gap = '3px';
+
+    const letter = document.createElement('div');
+    letter.className = 'day-letter';
+    letter.textContent = d;
+    letter.style.color = isPrep ? col.solid : 'var(--gray)';
+    letter.style.fontWeight = isPrep ? '600' : '500';
+
+    const num = document.createElement('div');
+    num.className = 'day-num';
+    num.textContent = nums[i];
+    if (isSelected) {
+      num.style.background = col.solid;
+      num.style.color = '#F5F0E8';
+      num.style.boxShadow = '0 2px 8px rgba(0,0,0,.15)';
+    } else if (isPrep) {
+      num.style.background = col.solid;
+      num.style.color = '#F5F0E8';
+      num.style.boxShadow = '0 2px 8px rgba(0,0,0,.15)';
+    } else if (hasMeals) {
+      num.style.background = col.light;
+      num.style.color = col.solid;
+      num.style.border = '1.5px dashed ' + col.mid;
+    }
+
+    const dot = document.createElement('div');
+    dot.className = 'day-dot';
+    if (isPrep) dot.style.background = col.solid;
+    else if (hasMeals) dot.style.background = col.mid;
+
+    pill.appendChild(letter);
+    pill.appendChild(num);
+    pill.appendChild(dot);
+    pill.onclick = () => selectDay(i);
+    strip.appendChild(pill);
+  });
+  updateDayMeals();
+  updateDayCallout();
+}
+
+function updateDayMeals() {
+  const container = document.getElementById('today-meals-container');
+  if (!container) return;
+  const meals = dayMeals[selectedDay] || [];
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  container.innerHTML = '';
+  if (meals.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--gray);font-size:13px">No meals planned for '+days[selectedDay]+' — this day is flexible 🐱</div>';
+    return;
+  }
+  meals.forEach(m => {
+    const el = document.createElement('div');
+    el.className = 'today-meal';
+    el.onclick = () => goTo('screen-recipe');
+    el.innerHTML =
+      '<div class="today-meal-emoji">'+m.emoji+'</div>' +
+      '<div class="today-meal-info"><div class="today-meal-type">'+m.type+'</div><div class="today-meal-name">'+m.name+'</div><div class="today-meal-meta">'+m.meta+'</div></div>' +
+      '<div style="display:flex;align-items:center;gap:6px">' +
+        '<div onclick="event.stopPropagation();showSwapSheet()" style="font-size:11px;color:var(--terra);font-weight:500;background:var(--terra-light);padding:3px 8px;border-radius:100px;cursor:pointer;white-space:nowrap">Swap</div>' +
+        '<div class="today-meal-arrow">›</div>' +
+      '</div>';
+    container.appendChild(el);
+  });
+}
+
+function buildWeekStrip() {
+  selectDay(selectedDay);
+}
+
+// Update Order button on groceries
+
+
+
+// ─── DYNAMIC DAY CALLOUT ───
+const PREP_DAYS_SET = new Set([0, 4]); // Sun, Thu
+
+function updateDayCallout() {
+  const callout = document.getElementById('day-callout');
+  const label = document.getElementById('meals-day-label');
+  if (!callout) return;
+
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const sessions = {
+    0: { prep: true,  session: 'Sunday prep',   recipes: 3, covers: 'Sun–Wed', cookScreen: 'screen-cook-overview' },
+    4: { prep: true,  session: 'Thursday prep',  recipes: 2, covers: 'Thu–Sat', cookScreen: 'screen-cook-overview' },
+  };
+  const eatingSession = {
+    1: 'Sunday prep session',  2: 'Sunday prep session',
+    3: 'Sunday prep session',  5: 'Thursday prep session',  6: 'Thursday prep session',
+  };
+
+  const dayName = days[selectedDay];
+  if (label) label.textContent = dayName + '\'s meals';
+
+  if (sessions[selectedDay]) {
+    // PREP DAY callout
+    const s = sessions[selectedDay];
+    const pCol = SESSION_COLORS_APP[DAY_SESSION[selectedDay] !== undefined ? DAY_SESSION[selectedDay] : 0];
+    callout.innerHTML = `
+      <div id="start-cooking-callout" style="background:linear-gradient(135deg,${pCol.solid} 0%,${pCol.mid} 100%);border-radius:20px;padding:18px 18px 16px;position:relative;overflow:hidden;">
+        <button onclick="document.getElementById('start-cooking-callout').style.display='none'" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,.2);border:none;border-radius:50%;width:28px;height:28px;color:#FAF6F0;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;">✕</button>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:rgba(255,255,255,.8);margin-bottom:6px;">Today's your prep day</div>
+        <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:#FAF6F0;line-height:1.2;margin-bottom:4px;">${s.session} ready 🍳</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.75);margin-bottom:14px;">${s.recipes} recipes · covers ${s.covers}</div>
+        <div style="display:flex;gap:14px;margin-bottom:14px;">
+          <div style="font-size:12px;color:rgba(255,255,255,.7);">⏱ ~2 hrs total</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.7);">🍽 ${s.recipes} recipes</div>
+        </div>
+        <button onclick="goTo('${s.cookScreen}')" style="background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);color:#FAF6F0;border:none;border-radius:12px;padding:10px 18px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;">Start cooking</button>
+      </div>`;
+  } else if (eatingSession[selectedDay]) {
+    // EATING DAY callout
+    const col = SESSION_COLORS_APP[DAY_SESSION[selectedDay]];
+    callout.innerHTML = `
+      <div style="background:${col.light};border:1px solid ${col.mid};border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:12px">
+        <div style="font-size:20px">🥡</div>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--dark)">Covered by your ${eatingSession[selectedDay]}</div>
+          <div style="font-size:12px;color:var(--gray);margin-top:2px">Your meals are prepped and ready to eat</div>
+        </div>
+      </div>`;
+  } else {
+    // FLEXIBLE DAY
+    callout.innerHTML = `
+      <div style="background:var(--cream-mid);border:1px solid var(--border);border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:12px">
+        <div style="font-size:20px">✨</div>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--dark)">Saturday is flexible</div>
+          <div style="font-size:12px;color:var(--gray);margin-top:2px">No meals planned — eat whatever sounds good</div>
+        </div>
+      </div>`;
+  }
+}
+
+// ─── TOOLTIPS ───
+const TOOLTIPS = [
+  {
+    title: 'Your week at a glance',
+    text: 'Prep days are highlighted in colour — tap any day to see that day\'s meals.',
+    target: 'week-strip',
+    position: 'below',
+  },
+  {
+    title: 'Ask Maui anything',
+    text: 'Change a meal, make next week spicier, add more protein — just ask.',
+    target: 'fab-ask-maui',
+    position: 'above',
+  },
+  {
+    title: 'Your progress',
+    text: 'See your streak, badges, and how your plan is supporting your goal.',
+    target: 'streak-badge-wrap',
+    position: 'below',
+  },
+  {
+    title: 'Start cooking',
+    text: 'On your prep day, tap here and Maui walks you through every recipe — ingredients, steps, and suggested cook order.',
+    target: 'start-cooking-callout',
+    position: 'below',
+  },
+];
+
+let tooltipIdx = 0;
+let tooltipsShown = false;
+
+function showTooltips() {
+  tooltipIdx = 0;
+  tooltipsShown = true;
+  document.getElementById('tooltip-overlay').style.display = 'block';
+  renderTooltip();
+}
+
+let currentSpotlightEl = null;
+let currentSpotlightElOriginalRadius = '';
+
+function clearSpotlight() {
+  if (currentSpotlightEl) {
+    currentSpotlightEl.classList.remove('spotlight-target');
+    currentSpotlightEl.style.borderRadius = currentSpotlightElOriginalRadius || '';
+    currentSpotlightElOriginalRadius = '';
+    currentSpotlightEl = null;
+  }
+}
+
+function renderTooltip() {
+  const tip = TOOLTIPS[tooltipIdx];
+  if (!tip) { closeTooltips(); return; }
+
+  // For tooltip 4 (start cooking) — if element doesn't exist, select Sunday first
+  if (tip.target === 'start-cooking-callout') {
+    const el = document.getElementById('start-cooking-callout');
+    if (!el) {
+      // Select Sunday to trigger the prep day callout
+      selectDay(0);
+      setTimeout(renderTooltip, 150);
+      return;
+    }
+  }
+
+  clearSpotlight();
+
+  // Update dots
+  const dots = document.getElementById('tooltip-dots');
+  dots.innerHTML = TOOLTIPS.map((_, i) =>
+    `<div style="width:6px;height:6px;border-radius:50%;background:${i === tooltipIdx ? 'var(--terra)' : 'var(--border)'}"></div>`
+  ).join('');
+
+  document.getElementById('tooltip-title').textContent = tip.title;
+  document.getElementById('tooltip-text').textContent = tip.text;
+
+  // Apply spotlight to target
+  const device = document.querySelector('.device');
+  const deviceRect = device.getBoundingClientRect();
+  const card = document.getElementById('tooltip-card');
+  const target = document.getElementById(tip.target);
+
+  if (target) {
+    // Don't spotlight FAB — pill shape distorts with box-shadow
+    if (tip.target !== 'fab-ask-maui') {
+      target.classList.add('spotlight-target');
+      // Save original border-radius before overriding
+      currentSpotlightElOriginalRadius = target.style.borderRadius;
+      // Match border-radius to the element's shape
+      if (tip.target === 'streak-badge-wrap') {
+        target.style.borderRadius = '100px';
+      } else if (tip.target === 'start-cooking-callout') {
+        target.style.borderRadius = '20px';
+      } else {
+        target.style.borderRadius = '14px';
+      }
+      currentSpotlightEl = target;
+    }
+
+    const rect = target.getBoundingClientRect();
+    const relTop = rect.top - deviceRect.top;
+    const relLeft = rect.left - deviceRect.left;
+    const relBottom = rect.bottom - deviceRect.top;
+    const relWidth = rect.width;
+
+    card.style.transform = '';
+    card.style.left = ''; card.style.right = ''; card.style.top = ''; card.style.bottom = '';
+
+    const notch = document.getElementById('tooltip-notch');
+    const cardLeft = Math.max(12, Math.min(relLeft, deviceRect.width - 272));
+    const targetCenterX = relLeft + (rect.width / 2);
+    const notchOffset = Math.max(16, Math.min(targetCenterX - cardLeft, 244));
+
+    if (tip.position === 'below') {
+      card.style.top = Math.min(relBottom + 14, deviceRect.height - 200) + 'px';
+      card.style.left = cardLeft + 'px';
+      // Notch points UP toward the element above
+      notch.style.cssText = 'position:absolute;top:-7px;bottom:auto;left:' + notchOffset + 'px;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:8px solid var(--cream);';
+    } else {
+      const cardH = 160;
+      card.style.top = Math.max(60, relTop - cardH - 14) + 'px';
+      card.style.left = cardLeft + 'px';
+      // Notch points DOWN toward the element below
+      notch.style.cssText = 'position:absolute;bottom:-7px;top:auto;left:' + notchOffset + 'px;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid var(--cream);';
+    }
+  } else {
+    card.style.top = '30%'; card.style.left = '50%'; card.style.transform = 'translateX(-50%)';
+  }
+}
+
+function nextTooltip() {
+  clearSpotlight();
+  tooltipIdx++;
+  if (tooltipIdx >= TOOLTIPS.length) {
+    closeTooltips();
+  } else {
+    renderTooltip();
+  }
+}
+
+function closeTooltips() {
+  clearSpotlight();
+  document.getElementById('tooltip-overlay').style.display = 'none';
+  tooltipsShown = false;
+}
+
+// Add tooltip trigger button to outer controls (added at end of init)
+// ─── INIT ───
+buildWeekStrip();
+showTooltips();
+
+const style = document.createElement('style');
+style.textContent = '@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}';
+document.head.appendChild(style);
+</script>
+</body>
+</html>
